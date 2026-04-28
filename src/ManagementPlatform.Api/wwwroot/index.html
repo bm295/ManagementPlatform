@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Order Checkout Demo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Order Checkout Demo</h1>
+      <p>Search orders, run checkout, and watch the follow-up work.</p>
+    </div>
+    <button id="refreshButton" type="button">Refresh</button>
+  </header>
+
+  <main class="shell">
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Orders</h2>
+        <form id="searchForm" class="search">
+          <input id="searchInput" name="name" type="search" placeholder="Search by order name" autocomplete="off">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+      <div id="orders" class="orders"></div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-header">
+        <h2>Checkout</h2>
+        <span id="selectedOrderLabel" class="muted">No order selected</span>
+      </div>
+
+      <div id="orderDetails" class="details empty">Select an order to see details.</div>
+
+      <form id="checkoutForm" class="checkout-form">
+        <label>
+          Idempotency key
+          <input id="idempotencyKey" name="idempotencyKey" type="text" required>
+        </label>
+
+        <label>
+          Payment result
+          <select id="paymentToken" name="paymentMethodToken">
+            <option value="tok_success">Successful payment</option>
+            <option value="tok_fail">Failed payment</option>
+            <option value="tok_retry_success">Retryable failure, then success</option>
+            <option value="tok_retry_fail">Retryable failure, then final failure</option>
+          </select>
+        </label>
+
+        <button id="checkoutButton" type="submit" disabled>Checkout selected order</button>
+      </form>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-header">
+        <h2>Checkout Result</h2>
+        <button id="reloadCheckoutButton" type="button" disabled>Reload status</button>
+      </div>
+      <div id="checkoutResult" class="details empty">No checkout has been run yet.</div>
+    </section>
+
+    <section class="panel wide">
+      <div class="panel-header">
+        <h2>Dead Letters</h2>
+        <button id="reloadDeadLettersButton" type="button">Reload</button>
+      </div>
+      <div id="deadLetters" class="details empty">No dead letter messages.</div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

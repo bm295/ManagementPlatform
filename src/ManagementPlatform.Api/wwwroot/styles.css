@@ -1,0 +1,280 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --text: #18202f;
+  --muted: #6c7586;
+  --border: #d9deea;
+  --primary: #1f6feb;
+  --primary-dark: #174ea6;
+  --success: #147a3d;
+  --failed: #b42318;
+  --pending: #936700;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 6px;
+  background: var(--primary);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 10px 14px;
+}
+
+button:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+input,
+select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  background: #ffffff;
+  color: var(--text);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+}
+
+.topbar p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.shell {
+  display: grid;
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  gap: 20px;
+  padding: 24px 32px;
+}
+
+.panel {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 18px;
+}
+
+.panel.wide {
+  grid-column: 1 / -1;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.search {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto;
+  gap: 8px;
+  width: min(100%, 420px);
+}
+
+.orders {
+  display: grid;
+  gap: 10px;
+}
+
+.order-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--text);
+  padding: 14px;
+  text-align: left;
+}
+
+.order-row:hover,
+.order-row.active {
+  border-color: var(--primary);
+}
+
+.order-title {
+  margin: 0 0 6px;
+  font-weight: 700;
+}
+
+.order-meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.status {
+  align-self: start;
+  border-radius: 999px;
+  background: #edf2ff;
+  color: var(--primary-dark);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 9px;
+}
+
+.status.failed {
+  background: #fff0ee;
+  color: var(--failed);
+}
+
+.status.succeeded {
+  background: #ecfdf3;
+  color: var(--success);
+}
+
+.status.pending {
+  background: #fffaeb;
+  color: var(--pending);
+}
+
+.details {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fbfcff;
+  padding: 14px;
+}
+
+.details.empty {
+  color: var(--muted);
+}
+
+.details dl {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 8px 14px;
+  margin: 0;
+}
+
+.details dt {
+  color: var(--muted);
+}
+
+.details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.checkout-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.checkout-form label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.integrations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.integration {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.integration h3 {
+  margin: 0 0 8px;
+  font-size: 15px;
+}
+
+.toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  max-width: 420px;
+  border-radius: 8px;
+  background: #18202f;
+  color: #ffffff;
+  padding: 12px 14px;
+  box-shadow: 0 10px 30px rgba(24, 32, 47, 0.18);
+}
+
+@media (max-width: 840px) {
+  .topbar,
+  .shell {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .topbar,
+  .panel-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .search {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .details dl,
+  .integrations {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,39 @@
+@ManagementPlatform.Api_HostAddress = http://localhost:5247
+
+GET {{ManagementPlatform.Api_HostAddress}}/api/orders?name=catalog
+Accept: application/json
+
+###
+
+POST {{ManagementPlatform.Api_HostAddress}}/api/orders/7cf2feda-02df-48fc-ae4a-a9f47a5f3c18/checkout
+Content-Type: application/json
+
+{
+  "idempotencyKey": "demo-key-1",
+  "paymentMethodToken": "tok_success"
+}
+
+###
+
+POST {{ManagementPlatform.Api_HostAddress}}/api/orders/7cf2feda-02df-48fc-ae4a-a9f47a5f3c18/checkout
+Content-Type: application/json
+
+{
+  "idempotencyKey": "demo-key-retry-success",
+  "paymentMethodToken": "tok_retry_success"
+}
+
+###
+
+POST {{ManagementPlatform.Api_HostAddress}}/api/orders/c0faeae7-46dd-48f5-a831-1f717bc16f6b/checkout
+Content-Type: application/json
+
+{
+  "idempotencyKey": "demo-key-retry-fail",
+  "paymentMethodToken": "tok_retry_fail"
+}
+
+###
+
+GET {{ManagementPlatform.Api_HostAddress}}/api/dead-letters
+Accept: application/json
