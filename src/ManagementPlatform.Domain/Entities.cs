@@ -4,8 +4,7 @@ public enum OrderStatus
 {
     Draft = 0,
     CheckoutProcessing = 1,
-    Paid = 2,
-    ProductionQueued = 3
+    Paid = 2
 }
 
 public enum CheckoutStatus
@@ -39,11 +38,10 @@ public enum OutboxStatus
 public enum OutboxMessageType
 {
     SendCheckoutEmail = 0,
-    CreateInvoice = 1,
-    PushToProduction = 2
+    PushToProduction = 1
 }
 
-public sealed class Customer
+public sealed class Tenant
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
@@ -56,8 +54,8 @@ public sealed class Customer
 public sealed class Order
 {
     public Guid Id { get; set; } = Guid.NewGuid();
-    public Guid CustomerId { get; set; }
-    public Customer Customer { get; set; } = null!;
+    public Guid TenantId { get; set; }
+    public Tenant Tenant { get; set; } = null!;
     public string Name { get; set; } = string.Empty;
     public decimal Amount { get; set; }
     public string Currency { get; set; } = "USD";
@@ -80,7 +78,7 @@ public sealed class CheckoutAttempt
     public DateTimeOffset? CompletedAt { get; set; }
 
     public PaymentTransaction? PaymentTransaction { get; set; }
-    public InvoiceRequest? InvoiceRequest { get; set; }
+    public Invoice? Invoice { get; set; }
     public List<OutboxMessage> OutboxMessages { get; set; } = [];
 }
 
@@ -98,13 +96,12 @@ public sealed class PaymentTransaction
     public DateTimeOffset CreatedAt { get; set; }
 }
 
-public sealed class InvoiceRequest
+public sealed class Invoice
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public Guid CheckoutAttemptId { get; set; }
     public CheckoutAttempt CheckoutAttempt { get; set; } = null!;
     public InvoiceStatus Status { get; set; } = InvoiceStatus.Pending;
-    public string? ExternalInvoiceId { get; set; }
     public string? FailureReason { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset? CompletedAt { get; set; }

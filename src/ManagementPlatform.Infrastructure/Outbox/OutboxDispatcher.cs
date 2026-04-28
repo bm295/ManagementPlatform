@@ -136,25 +136,15 @@ public sealed class OutboxDispatcher(
                     .SendCheckoutSucceededAsync(emailPayload, cancellationToken);
                 break;
 
-            case OutboxMessageType.CreateInvoice:
-                var invoicePayload = Deserialize<InvoicePayload>(message.PayloadJson);
-                var invoiceResult = await serviceProvider.GetRequiredService<IInvoiceClient>()
-                    .CreateInvoiceAsync(invoicePayload, cancellationToken);
-                var invoice = await dbContext.InvoiceRequests
-                    .SingleAsync(item => item.CheckoutAttemptId == message.CheckoutAttemptId, cancellationToken);
-                invoice.Status = InvoiceStatus.Succeeded;
-                invoice.ExternalInvoiceId = invoiceResult.ExternalInvoiceId;
-                invoice.FailureReason = null;
-                invoice.CompletedAt = clock.UtcNow;
-                break;
-
             case OutboxMessageType.PushToProduction:
                 var productionPayload = Deserialize<ProductionOrderPayload>(message.PayloadJson);
                 await serviceProvider.GetRequiredService<IProductionClient>()
                     .PushOrderAsync(productionPayload, cancellationToken);
-                var order = await dbContext.Orders
-                    .SingleAsync(item => item.Id == productionPayload.OrderId, cancellationToken);
-                order.Status = OrderStatus.ProductionQueued;
+                var invoice = await dbContext.Invoices
+                    .SingleAsync(item => item.CheckoutAttemptId == message.CheckoutAttemptId, cancellationToken);
+                invoice.Status = InvoiceStatus.Succeeded;
+                invoice.FailureReason = null;
+                invoice.CompletedAt = clock.UtcNow;
                 break;
 
             default:
@@ -168,12 +158,12 @@ public sealed class OutboxDispatcher(
         string failureReason,
         CancellationToken cancellationToken)
     {
-        if (message.Type is not OutboxMessageType.CreateInvoice)
+        if (message.Type is not OutboxMessageType.PushToProduction)
         {
             return;
         }
 
-        var invoice = await dbContext.InvoiceRequests
+        var invoice = await dbContext.Invoices
             .SingleOrDefaultAsync(item => item.CheckoutAttemptId == message.CheckoutAttemptId, cancellationToken);
 
         if (invoice is null)

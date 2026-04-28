@@ -11,7 +11,7 @@ public sealed record PagedResult<T>(
 public sealed record OrderSummaryDto(
     Guid Id,
     string Name,
-    string CustomerName,
+    string TenantName,
     decimal Amount,
     string Currency,
     OrderStatus Status,
@@ -20,9 +20,8 @@ public sealed record OrderSummaryDto(
 public sealed record OrderDetailsDto(
     Guid Id,
     string Name,
-    Guid CustomerId,
-    string CustomerName,
-    string CustomerEmail,
+    string TenantName,
+    string TenantEmail,
     decimal Amount,
     string Currency,
     OrderStatus Status,

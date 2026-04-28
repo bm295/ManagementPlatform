@@ -14,7 +14,7 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
     {
         var query = dbContext.Orders
             .AsNoTracking()
-            .Include(order => order.Customer)
+            .Include(order => order.Tenant)
             .AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(name))
@@ -31,7 +31,7 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
             .Select(order => new OrderSummaryDto(
                 order.Id,
                 order.Name,
-                order.Customer.Name,
+                order.Tenant.Name,
                 order.Amount,
                 order.Currency,
                 order.Status,
@@ -45,14 +45,13 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
     {
         return await dbContext.Orders
             .AsNoTracking()
-            .Include(order => order.Customer)
+            .Include(order => order.Tenant)
             .Where(order => order.Id == orderId)
             .Select(order => new OrderDetailsDto(
                 order.Id,
                 order.Name,
-                order.CustomerId,
-                order.Customer.Name,
-                order.Customer.Email,
+                order.Tenant.Name,
+                order.Tenant.Email,
                 order.Amount,
                 order.Currency,
                 order.Status,
@@ -64,7 +63,7 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
     public async Task<Order?> GetForCheckoutAsync(Guid orderId, CancellationToken cancellationToken)
     {
         return await dbContext.Orders
-            .Include(order => order.Customer)
+            .Include(order => order.Tenant)
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
     }
 }

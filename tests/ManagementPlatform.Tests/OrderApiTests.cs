@@ -56,7 +56,7 @@ public sealed class OrderApiTests
         Assert.NotNull(checkout);
         Assert.Equal(CheckoutStatus.PaymentSucceeded, checkout.Status);
         Assert.Equal(PaymentStatus.Succeeded, checkout.PaymentStatus);
-        Assert.Equal(3, checkout.Integrations.Count);
+        Assert.Equal(2, checkout.Integrations.Count);
         Assert.All(checkout.Integrations, item => Assert.Equal(OutboxStatus.Pending, item.Status));
 
         var fetched = await client.GetFromJsonAsync<CheckoutResponse>($"/api/checkouts/{checkout.CheckoutId}");
@@ -162,11 +162,10 @@ public sealed class OrderApiTests
         using var scope = services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var now = DateTimeOffset.UtcNow;
-
-        var customer = new Customer
+        var tenant = new Tenant
         {
             Id = Guid.NewGuid(),
-            Name = $"{name} Customer",
+            Name = $"{name} Tenant",
             Email = $"{Guid.NewGuid():N}@example.test",
             CreatedAt = now
         };
@@ -174,8 +173,8 @@ public sealed class OrderApiTests
         var order = new Order
         {
             Id = Guid.NewGuid(),
-            CustomerId = customer.Id,
-            Customer = customer,
+            TenantId = tenant.Id,
+            Tenant = tenant,
             Name = name,
             Amount = 150m,
             Currency = "USD",
@@ -183,7 +182,7 @@ public sealed class OrderApiTests
             CreatedAt = now
         };
 
-        dbContext.Customers.Add(customer);
+        dbContext.Tenants.Add(tenant);
         dbContext.Orders.Add(order);
         await dbContext.SaveChangesAsync();
 

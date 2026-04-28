@@ -1,4 +1,4 @@
-const orderStatus = ["Draft", "CheckoutProcessing", "Paid", "ProductionQueued"];
+const orderStatus = ["Draft", "CheckoutProcessing", "Paid"];
 const checkoutStatus = ["PaymentPending", "PaymentFailed", "PaymentSucceeded"];
 const paymentStatus = ["Failed", "Succeeded"];
 const outboxStatus = ["Pending", "Processing", "Succeeded", "Failed"];
@@ -118,7 +118,7 @@ function renderOrders() {
       <button class="order-row${active}" type="button" data-order-id="${order.id}">
         <span>
           <span class="order-title">${escapeHtml(order.name)}</span>
-          <span class="order-meta">${escapeHtml(order.customerName)} | ${formatMoney(order.amount, order.currency)}</span>
+          <span class="order-meta">${escapeHtml(order.tenantName)} | ${formatMoney(order.amount, order.currency)}</span>
         </span>
         <span class="status ${statusClass(statusText)}">${statusText}</span>
       </button>
@@ -135,8 +135,8 @@ function renderOrderDetails(order) {
   orderDetailsElement.innerHTML = `
     <dl>
       <dt>Order</dt><dd>${escapeHtml(order.name)}</dd>
-      <dt>Customer</dt><dd>${escapeHtml(order.customerName)}</dd>
-      <dt>Email</dt><dd>${escapeHtml(order.customerEmail)}</dd>
+      <dt>Tenant</dt><dd>${escapeHtml(order.tenantName)}</dd>
+      <dt>Email</dt><dd>${escapeHtml(order.tenantEmail)}</dd>
       <dt>Amount</dt><dd>${formatMoney(order.amount, order.currency)}</dd>
       <dt>Status</dt><dd>${enumName(orderStatus, order.status)}</dd>
       <dt>Created</dt><dd>${formatDate(order.createdAt)}</dd>

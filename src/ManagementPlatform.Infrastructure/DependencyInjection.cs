@@ -32,7 +32,6 @@ public static class DependencyInjection
 
         services.AddScoped<IPaymentGateway, MockPaymentGateway>();
         services.AddScoped<IEmailSender, MockEmailSender>();
-        services.AddScoped<IInvoiceClient, MockInvoiceClient>();
         services.AddScoped<IProductionClient, MockProductionClient>();
 
         var outboxEnabled = configuration.GetValue<bool?>("Outbox:Enabled") ?? true;

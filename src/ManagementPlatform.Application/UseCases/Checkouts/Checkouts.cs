@@ -115,29 +115,21 @@ public sealed class CheckoutService(
         order.Status = OrderStatus.Paid;
         order.PaidAt = clock.UtcNow;
 
-        var invoiceRequest = new InvoiceRequest
+        var invoice = new Invoice
         {
             CheckoutAttemptId = attempt.Id,
             Status = InvoiceStatus.Pending,
             CreatedAt = clock.UtcNow
         };
 
-        attempt.InvoiceRequest = invoiceRequest;
-        checkoutRepository.AddInvoiceRequest(invoiceRequest);
+        attempt.Invoice = invoice;
+        checkoutRepository.AddInvoice(invoice);
 
         var emailPayload = new CheckoutEmailPayload(
             attempt.Id,
             order.Id,
             order.Name,
-            order.Customer.Email,
-            order.Amount,
-            order.Currency);
-
-        var invoicePayload = new InvoicePayload(
-            attempt.Id,
-            order.Id,
-            order.Name,
-            order.Customer.Email,
+            order.Tenant.Email,
             order.Amount,
             order.Currency);
 
@@ -145,14 +137,12 @@ public sealed class CheckoutService(
             attempt.Id,
             order.Id,
             order.Name,
-            order.CustomerId,
             order.Amount,
             order.Currency);
 
         var outboxMessages = new[]
         {
             CreateOutboxMessage(attempt.Id, OutboxMessageType.SendCheckoutEmail, emailPayload),
-            CreateOutboxMessage(attempt.Id, OutboxMessageType.CreateInvoice, invoicePayload),
             CreateOutboxMessage(attempt.Id, OutboxMessageType.PushToProduction, productionPayload)
         };
 

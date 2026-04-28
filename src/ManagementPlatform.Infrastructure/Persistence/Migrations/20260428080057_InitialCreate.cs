@@ -12,7 +12,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "customers",
+                name: "Tenants",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -22,15 +22,15 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_customers", x => x.Id);
+                    table.PrimaryKey("PK_Tenants", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "orders",
+                name: "Orders",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CustomerId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TenantId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(240)", maxLength: 240, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
@@ -40,17 +40,17 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_orders", x => x.Id);
+                    table.PrimaryKey("PK_Orders", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_orders_customers_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "customers",
+                        name: "FK_Orders_Tenants_TenantId",
+                        column: x => x.TenantId,
+                        principalTable: "Tenants",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "checkout_attempts",
+                name: "CheckoutAttempts",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -63,40 +63,39 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_checkout_attempts", x => x.Id);
+                    table.PrimaryKey("PK_CheckoutAttempts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_checkout_attempts_orders_OrderId",
+                        name: "FK_CheckoutAttempts_Orders_OrderId",
                         column: x => x.OrderId,
-                        principalTable: "orders",
+                        principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
-                name: "invoice_requests",
+                name: "Invoices",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CheckoutAttemptId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
-                    ExternalInvoiceId = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true),
                     FailureReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_invoice_requests", x => x.Id);
+                    table.PrimaryKey("PK_Invoices", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_invoice_requests_checkout_attempts_CheckoutAttemptId",
+                        name: "FK_Invoices_CheckoutAttempts_CheckoutAttemptId",
                         column: x => x.CheckoutAttemptId,
-                        principalTable: "checkout_attempts",
+                        principalTable: "CheckoutAttempts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "outbox_messages",
+                name: "OutboxMessages",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -113,17 +112,17 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_outbox_messages", x => x.Id);
+                    table.PrimaryKey("PK_OutboxMessages", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_outbox_messages_checkout_attempts_CheckoutAttemptId",
+                        name: "FK_OutboxMessages_CheckoutAttempts_CheckoutAttemptId",
                         column: x => x.CheckoutAttemptId,
-                        principalTable: "checkout_attempts",
+                        principalTable: "CheckoutAttempts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "payment_transactions",
+                name: "PaymentTransactions",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -137,69 +136,62 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_payment_transactions", x => x.Id);
+                    table.PrimaryKey("PK_PaymentTransactions", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_payment_transactions_checkout_attempts_CheckoutAttemptId",
+                        name: "FK_PaymentTransactions_CheckoutAttempts_CheckoutAttemptId",
                         column: x => x.CheckoutAttemptId,
-                        principalTable: "checkout_attempts",
+                        principalTable: "CheckoutAttempts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_checkout_attempts_OrderId_IdempotencyKey",
-                table: "checkout_attempts",
+                name: "IX_CheckoutAttempts_OrderId_IdempotencyKey",
+                table: "CheckoutAttempts",
                 columns: new[] { "OrderId", "IdempotencyKey" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_customers_Email",
-                table: "customers",
+                name: "IX_Tenants_Email",
+                table: "Tenants",
                 column: "Email",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_invoice_requests_CheckoutAttemptId",
-                table: "invoice_requests",
+                name: "IX_Invoices_CheckoutAttemptId",
+                table: "Invoices",
                 column: "CheckoutAttemptId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_invoice_requests_ExternalInvoiceId",
-                table: "invoice_requests",
-                column: "ExternalInvoiceId",
-                unique: true,
-                filter: "[ExternalInvoiceId] IS NOT NULL");
+                name: "IX_Orders_TenantId",
+                table: "Orders",
+                column: "TenantId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_orders_CustomerId",
-                table: "orders",
-                column: "CustomerId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_orders_Name",
-                table: "orders",
+                name: "IX_Orders_Name",
+                table: "Orders",
                 column: "Name");
 
             migrationBuilder.CreateIndex(
-                name: "IX_outbox_messages_CheckoutAttemptId",
-                table: "outbox_messages",
+                name: "IX_OutboxMessages_CheckoutAttemptId",
+                table: "OutboxMessages",
                 column: "CheckoutAttemptId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_outbox_messages_Status_NextAttemptAt",
-                table: "outbox_messages",
+                name: "IX_OutboxMessages_Status_NextAttemptAt",
+                table: "OutboxMessages",
                 columns: new[] { "Status", "NextAttemptAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_payment_transactions_CheckoutAttemptId",
-                table: "payment_transactions",
+                name: "IX_PaymentTransactions_CheckoutAttemptId",
+                table: "PaymentTransactions",
                 column: "CheckoutAttemptId",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_payment_transactions_ProviderTransactionId",
-                table: "payment_transactions",
+                name: "IX_PaymentTransactions_ProviderTransactionId",
+                table: "PaymentTransactions",
                 column: "ProviderTransactionId",
                 unique: true,
                 filter: "[ProviderTransactionId] IS NOT NULL");
@@ -209,22 +201,22 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "invoice_requests");
+                name: "Invoices");
 
             migrationBuilder.DropTable(
-                name: "outbox_messages");
+                name: "OutboxMessages");
 
             migrationBuilder.DropTable(
-                name: "payment_transactions");
+                name: "PaymentTransactions");
 
             migrationBuilder.DropTable(
-                name: "checkout_attempts");
+                name: "CheckoutAttempts");
 
             migrationBuilder.DropTable(
-                name: "orders");
+                name: "Orders");
 
             migrationBuilder.DropTable(
-                name: "customers");
+                name: "Tenants");
         }
     }
 }

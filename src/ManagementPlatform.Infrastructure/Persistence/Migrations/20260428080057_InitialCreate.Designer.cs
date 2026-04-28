@@ -59,37 +59,10 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("OrderId", "IdempotencyKey")
                         .IsUnique();
 
-                    b.ToTable("checkout_attempts", (string)null);
+                    b.ToTable("CheckoutAttempts", (string)null);
                 });
 
-            modelBuilder.Entity("ManagementPlatform.Domain.Customer", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("nvarchar(320)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Email")
-                        .IsUnique();
-
-                    b.ToTable("customers", (string)null);
-                });
-
-            modelBuilder.Entity("ManagementPlatform.Domain.InvoiceRequest", b =>
+            modelBuilder.Entity("ManagementPlatform.Domain.Invoice", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -103,10 +76,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
-
-                    b.Property<string>("ExternalInvoiceId")
-                        .HasMaxLength(120)
-                        .HasColumnType("nvarchar(120)");
 
                     b.Property<string>("FailureReason")
                         .HasMaxLength(500)
@@ -122,11 +91,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     b.HasIndex("CheckoutAttemptId")
                         .IsUnique();
 
-                    b.HasIndex("ExternalInvoiceId")
-                        .IsUnique()
-                        .HasFilter("[ExternalInvoiceId] IS NOT NULL");
-
-                    b.ToTable("invoice_requests", (string)null);
+                    b.ToTable("Invoices", (string)null);
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.Order", b =>
@@ -147,9 +112,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(3)
                         .HasColumnType("nvarchar(3)");
 
-                    b.Property<Guid>("CustomerId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(240)
@@ -163,13 +125,16 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("CustomerId");
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("Name");
 
-                    b.ToTable("orders", (string)null);
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.OutboxMessage", b =>
@@ -220,7 +185,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Status", "NextAttemptAt");
 
-                    b.ToTable("outbox_messages", (string)null);
+                    b.ToTable("OutboxMessages", (string)null);
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.PaymentTransaction", b =>
@@ -266,7 +231,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .IsUnique()
                         .HasFilter("[ProviderTransactionId] IS NOT NULL");
 
-                    b.ToTable("payment_transactions", (string)null);
+                    b.ToTable("PaymentTransactions", (string)null);
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.CheckoutAttempt", b =>
@@ -280,11 +245,11 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("ManagementPlatform.Domain.InvoiceRequest", b =>
+            modelBuilder.Entity("ManagementPlatform.Domain.Invoice", b =>
                 {
                     b.HasOne("ManagementPlatform.Domain.CheckoutAttempt", "CheckoutAttempt")
-                        .WithOne("InvoiceRequest")
-                        .HasForeignKey("ManagementPlatform.Domain.InvoiceRequest", "CheckoutAttemptId")
+                        .WithOne("Invoice")
+                        .HasForeignKey("ManagementPlatform.Domain.Invoice", "CheckoutAttemptId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -293,13 +258,13 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.Order", b =>
                 {
-                    b.HasOne("ManagementPlatform.Domain.Customer", "Customer")
+                    b.HasOne("ManagementPlatform.Domain.Tenant", "Tenant")
                         .WithMany("Orders")
-                        .HasForeignKey("CustomerId")
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Customer");
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.OutboxMessage", b =>
@@ -326,14 +291,14 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.CheckoutAttempt", b =>
                 {
-                    b.Navigation("InvoiceRequest");
+                    b.Navigation("Invoice");
 
                     b.Navigation("OutboxMessages");
 
                     b.Navigation("PaymentTransaction");
                 });
 
-            modelBuilder.Entity("ManagementPlatform.Domain.Customer", b =>
+            modelBuilder.Entity("ManagementPlatform.Domain.Tenant", b =>
                 {
                     b.Navigation("Orders");
                 });

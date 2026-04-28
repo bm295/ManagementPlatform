@@ -40,8 +40,8 @@ public sealed class CheckoutServiceTests
         Assert.Equal(CheckoutStatus.PaymentSucceeded, response.Status);
         Assert.Equal(PaymentStatus.Succeeded, response.PaymentStatus);
         Assert.Equal(OrderStatus.Paid, order.Status);
-        Assert.Equal(3, await dbContext.OutboxMessages.CountAsync());
-        Assert.Equal(1, await dbContext.InvoiceRequests.CountAsync());
+        Assert.Equal(2, await dbContext.OutboxMessages.CountAsync());
+        Assert.Equal(1, await dbContext.Invoices.CountAsync());
         Assert.All(response.Integrations, item => Assert.Equal(OutboxStatus.Pending, item.Status));
     }
 
@@ -66,7 +66,7 @@ public sealed class CheckoutServiceTests
         Assert.Equal("Declined", response.FailureReason);
         Assert.Empty(response.Integrations);
         Assert.Empty(dbContext.OutboxMessages);
-        Assert.Empty(dbContext.InvoiceRequests);
+        Assert.Empty(dbContext.Invoices);
     }
 
     [Fact]
@@ -196,7 +196,6 @@ public sealed class CheckoutServiceTests
         services.AddSingleton<IClock>(new FixedClock());
         services.AddScoped(_ => CreateDbContext(databaseName));
         services.AddScoped<IEmailSender, FailingEmailSender>();
-        services.AddScoped<IInvoiceClient, NoopInvoiceClient>();
         services.AddScoped<IProductionClient, NoopProductionClient>();
 
         var provider = services.BuildServiceProvider();
@@ -247,7 +246,7 @@ public sealed class CheckoutServiceTests
     private static async Task<Guid> SeedOrdersAsync(ApplicationDbContext dbContext)
     {
         var now = DateTimeOffset.Parse("2026-04-28T00:00:00+00:00");
-        var customer = new Customer
+        var tenant = new Tenant
         {
             Id = Guid.NewGuid(),
             Name = "Northwind Studio",
@@ -258,22 +257,22 @@ public sealed class CheckoutServiceTests
         var firstOrder = new Order
         {
             Id = Guid.NewGuid(),
-            CustomerId = customer.Id,
-            Customer = customer,
+            TenantId = tenant.Id,
+            Tenant = tenant,
             Name = "Spring Catalog Retouch",
             Amount = 250m,
             Currency = "USD",
             CreatedAt = now
         };
 
-        dbContext.Customers.Add(customer);
+        dbContext.Tenants.Add(tenant);
         dbContext.Orders.AddRange(
             firstOrder,
             new Order
             {
                 Id = Guid.NewGuid(),
-                CustomerId = customer.Id,
-                Customer = customer,
+                TenantId = tenant.Id,
+                Tenant = tenant,
                 Name = "Marketplace Launch Batch",
                 Amount = 500m,
                 Currency = "USD",
@@ -325,14 +324,6 @@ public sealed class CheckoutServiceTests
         public Task SendCheckoutSucceededAsync(CheckoutEmailPayload payload, CancellationToken cancellationToken)
         {
             throw new InvalidOperationException("Email failed.");
-        }
-    }
-
-    private sealed class NoopInvoiceClient : IInvoiceClient
-    {
-        public Task<InvoiceClientResult> CreateInvoiceAsync(InvoicePayload payload, CancellationToken cancellationToken)
-        {
-            return Task.FromResult(new InvoiceClientResult("inv"));
         }
     }
 

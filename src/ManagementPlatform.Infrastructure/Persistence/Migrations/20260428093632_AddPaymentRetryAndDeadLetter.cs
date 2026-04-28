@@ -13,13 +13,13 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
         {
             migrationBuilder.AddColumn<int>(
                 name: "AttemptCount",
-                table: "payment_transactions",
+                table: "PaymentTransactions",
                 type: "int",
                 nullable: false,
                 defaultValue: 0);
 
             migrationBuilder.CreateTable(
-                name: "dead_letter_messages",
+                name: "DeadLetterMessages",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
@@ -33,17 +33,17 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_dead_letter_messages", x => x.Id);
+                    table.PrimaryKey("PK_DeadLetterMessages", x => x.Id);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_dead_letter_messages_FailedAt",
-                table: "dead_letter_messages",
+                name: "IX_DeadLetterMessages_FailedAt",
+                table: "DeadLetterMessages",
                 column: "FailedAt");
 
             migrationBuilder.CreateIndex(
-                name: "IX_dead_letter_messages_OutboxMessageId",
-                table: "dead_letter_messages",
+                name: "IX_DeadLetterMessages_OutboxMessageId",
+                table: "DeadLetterMessages",
                 column: "OutboxMessageId",
                 unique: true);
         }
@@ -52,11 +52,11 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "dead_letter_messages");
+                name: "DeadLetterMessages");
 
             migrationBuilder.DropColumn(
                 name: "AttemptCount",
-                table: "payment_transactions");
+                table: "PaymentTransactions");
         }
     }
 }

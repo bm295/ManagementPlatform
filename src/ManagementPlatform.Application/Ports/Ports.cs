@@ -31,7 +31,7 @@ public interface ICheckoutRepository
 
     void AddAttempt(CheckoutAttempt attempt);
     void AddPaymentTransaction(PaymentTransaction paymentTransaction);
-    void AddInvoiceRequest(InvoiceRequest invoiceRequest);
+    void AddInvoice(Invoice invoice);
     void AddOutboxMessages(IEnumerable<OutboxMessage> messages);
 }
 
@@ -55,11 +55,6 @@ public interface IEmailSender
     Task SendCheckoutSucceededAsync(CheckoutEmailPayload payload, CancellationToken cancellationToken);
 }
 
-public interface IInvoiceClient
-{
-    Task<InvoiceClientResult> CreateInvoiceAsync(InvoicePayload payload, CancellationToken cancellationToken);
-}
-
 public interface IProductionClient
 {
     Task PushOrderAsync(ProductionOrderPayload payload, CancellationToken cancellationToken);
@@ -78,21 +73,11 @@ public sealed record PaymentGatewayResult(
     string? FailureReason,
     bool IsRetryable = false);
 
-public sealed record InvoiceClientResult(string ExternalInvoiceId);
-
 public sealed record CheckoutEmailPayload(
     Guid CheckoutAttemptId,
     Guid OrderId,
     string OrderName,
-    string CustomerEmail,
-    decimal Amount,
-    string Currency);
-
-public sealed record InvoicePayload(
-    Guid CheckoutAttemptId,
-    Guid OrderId,
-    string OrderName,
-    string CustomerEmail,
+    string TenantEmail,
     decimal Amount,
     string Currency);
 
@@ -100,7 +85,6 @@ public sealed record ProductionOrderPayload(
     Guid CheckoutAttemptId,
     Guid OrderId,
     string OrderName,
-    Guid CustomerId,
     decimal Amount,
     string Currency);
 

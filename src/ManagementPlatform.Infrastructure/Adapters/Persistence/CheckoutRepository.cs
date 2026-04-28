@@ -38,9 +38,9 @@ public sealed class CheckoutRepository(ApplicationDbContext dbContext) : IChecko
         dbContext.PaymentTransactions.Add(paymentTransaction);
     }
 
-    public void AddInvoiceRequest(InvoiceRequest invoiceRequest)
+    public void AddInvoice(Invoice invoice)
     {
-        dbContext.InvoiceRequests.Add(invoiceRequest);
+        dbContext.Invoices.Add(invoice);
     }
 
     public void AddOutboxMessages(IEnumerable<OutboxMessage> messages)

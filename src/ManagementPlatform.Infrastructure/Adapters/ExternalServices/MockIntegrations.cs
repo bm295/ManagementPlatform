@@ -9,7 +9,6 @@ public sealed class MockIntegrationOptions
 {
     public bool PaymentSucceeds { get; set; } = true;
     public bool EmailSucceeds { get; set; } = true;
-    public bool InvoiceSucceeds { get; set; } = true;
     public bool ProductionSucceeds { get; set; } = true;
     public int PaymentRetrySuccessAttempt { get; set; } = 3;
     public string PaymentFailureReason { get; set; } = "Payment was declined by the mock provider.";
@@ -70,25 +69,10 @@ public sealed class MockEmailSender(
 
         logger.LogInformation(
             "Checkout email queued for {Email} and order {OrderId}.",
-            payload.CustomerEmail,
+            payload.TenantEmail,
             payload.OrderId);
 
         return Task.CompletedTask;
-    }
-}
-
-public sealed class MockInvoiceClient(IOptions<MockIntegrationOptions> options) : IInvoiceClient
-{
-    public Task<InvoiceClientResult> CreateInvoiceAsync(
-        InvoicePayload payload,
-        CancellationToken cancellationToken)
-    {
-        if (!options.Value.InvoiceSucceeds)
-        {
-            throw new InvalidOperationException("Mock invoice service failed.");
-        }
-
-        return Task.FromResult(new InvoiceClientResult($"inv_{payload.CheckoutAttemptId:N}"));
     }
 }
 
