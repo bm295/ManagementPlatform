@@ -41,7 +41,7 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
         return new PagedResult<OrderSummaryDto>(items, page, pageSize, totalCount);
     }
 
-    public async Task<OrderDetailsDto?> GetDetailsAsync(Guid orderId, CancellationToken cancellationToken)
+    public async Task<OrderDetailsDto?> GetDetailsAsync(long orderId, CancellationToken cancellationToken)
     {
         return await dbContext.Orders
             .AsNoTracking()
@@ -60,7 +60,7 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
             .SingleOrDefaultAsync(cancellationToken);
     }
 
-    public async Task<Order?> GetForCheckoutAsync(Guid orderId, CancellationToken cancellationToken)
+    public async Task<Order?> GetForCheckoutAsync(long orderId, CancellationToken cancellationToken)
     {
         return await dbContext.Orders
             .Include(order => order.Tenant)

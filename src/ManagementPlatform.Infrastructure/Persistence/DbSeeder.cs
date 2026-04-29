@@ -15,7 +15,7 @@ public sealed class DbSeeder(ApplicationDbContext dbContext)
         var now = DateTimeOffset.UtcNow;
         var northwind = new Tenant
         {
-            Id = Guid.Parse("16d35851-4b88-4fd1-96d6-7627fc1248dc"),
+            Id = 1,
             Name = "Northwind Studio",
             Email = "orders@northwind.example",
             CreatedAt = now
@@ -23,7 +23,7 @@ public sealed class DbSeeder(ApplicationDbContext dbContext)
 
         var aperture = new Tenant
         {
-            Id = Guid.Parse("f9f375d6-7b13-4f78-8a04-bf483ec17c78"),
+            Id = 2,
             Name = "Aperture Creative",
             Email = "billing@aperture.example",
             CreatedAt = now
@@ -33,7 +33,7 @@ public sealed class DbSeeder(ApplicationDbContext dbContext)
         dbContext.Orders.AddRange(
             new Order
             {
-                Id = Guid.Parse("7cf2feda-02df-48fc-ae4a-a9f47a5f3c18"),
+                Id = 1001,
                 TenantId = northwind.Id,
                 Tenant = northwind,
                 Name = "Spring Catalog Retouch",
@@ -43,7 +43,7 @@ public sealed class DbSeeder(ApplicationDbContext dbContext)
             },
             new Order
             {
-                Id = Guid.Parse("c0faeae7-46dd-48f5-a831-1f717bc16f6b"),
+                Id = 1002,
                 TenantId = northwind.Id,
                 Tenant = northwind,
                 Name = "Holiday Product Set",
@@ -53,7 +53,7 @@ public sealed class DbSeeder(ApplicationDbContext dbContext)
             },
             new Order
             {
-                Id = Guid.Parse("74cc9434-5eed-4587-b194-fb8572fa9827"),
+                Id = 1003,
                 TenantId = aperture.Id,
                 Tenant = aperture,
                 Name = "Marketplace Launch Batch",

@@ -3,24 +3,6 @@ using ManagementPlatform.Domain;
 
 namespace ManagementPlatform.Application;
 
-public sealed record CheckoutRequest(
-    string IdempotencyKey,
-    string PaymentMethodToken);
-
-public sealed record CheckoutResponse(
-    Guid CheckoutId,
-    Guid OrderId,
-    CheckoutStatus Status,
-    PaymentStatus? PaymentStatus,
-    string? FailureReason,
-    IReadOnlyList<IntegrationStatusDto> Integrations);
-
-public sealed record IntegrationStatusDto(
-    OutboxMessageType Type,
-    OutboxStatus Status,
-    int Attempts,
-    string? LastError);
-
 public sealed class CheckoutService(
     IOrderRepository orderRepository,
     ICheckoutRepository checkoutRepository,
@@ -32,7 +14,7 @@ public sealed class CheckoutService(
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<CheckoutResponse> CheckoutAsync(
-        Guid orderId,
+        long orderId,
         CheckoutRequest request,
         CancellationToken cancellationToken)
     {
@@ -153,7 +135,7 @@ public sealed class CheckoutService(
         return ToResponse(attempt);
     }
 
-    public async Task<CheckoutResponse> GetAsync(Guid checkoutId, CancellationToken cancellationToken)
+    public async Task<CheckoutResponse> GetAsync(long checkoutId, CancellationToken cancellationToken)
     {
         var attempt = await checkoutRepository.GetByIdAsync(checkoutId, cancellationToken);
 
@@ -211,7 +193,7 @@ public sealed class CheckoutService(
     }
 
     private OutboxMessage CreateOutboxMessage<TPayload>(
-        Guid checkoutAttemptId,
+        long checkoutAttemptId,
         OutboxMessageType type,
         TPayload payload)
     {
