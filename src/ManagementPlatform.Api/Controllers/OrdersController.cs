@@ -24,7 +24,7 @@ public sealed class OrdersController(
     [ProducesResponseType<OrderDetailsDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderDetailsDto>> Get(
-        Guid orderId,
+        long orderId,
         CancellationToken cancellationToken)
     {
         return Ok(await orderQueryService.GetByIdAsync(orderId, cancellationToken));
@@ -36,7 +36,7 @@ public sealed class OrdersController(
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status409Conflict)]
     public async Task<ActionResult<CheckoutResponse>> Checkout(
-        Guid orderId,
+        long orderId,
         [FromBody] CheckoutRequest request,
         CancellationToken cancellationToken)
     {

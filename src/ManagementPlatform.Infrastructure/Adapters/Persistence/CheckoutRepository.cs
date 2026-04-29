@@ -7,7 +7,7 @@ namespace ManagementPlatform.Infrastructure.Persistence;
 public sealed class CheckoutRepository(ApplicationDbContext dbContext) : ICheckoutRepository
 {
     public async Task<CheckoutAttempt?> GetByOrderAndIdempotencyKeyAsync(
-        Guid orderId,
+        long orderId,
         string idempotencyKey,
         CancellationToken cancellationToken)
     {
@@ -19,7 +19,7 @@ public sealed class CheckoutRepository(ApplicationDbContext dbContext) : IChecko
                 cancellationToken);
     }
 
-    public async Task<CheckoutAttempt?> GetByIdAsync(Guid checkoutId, CancellationToken cancellationToken)
+    public async Task<CheckoutAttempt?> GetByIdAsync(long checkoutId, CancellationToken cancellationToken)
     {
         return await dbContext.CheckoutAttempts
             .AsNoTracking()

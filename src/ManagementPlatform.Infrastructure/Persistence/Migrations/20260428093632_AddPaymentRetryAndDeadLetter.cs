@@ -22,9 +22,10 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 name: "DeadLetterMessages",
                 columns: table => new
                 {
-                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    OutboxMessageId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CheckoutAttemptId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Id = table.Column<long>(type: "bigint", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    OutboxMessageId = table.Column<long>(type: "bigint", nullable: false),
+                    CheckoutAttemptId = table.Column<long>(type: "bigint", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
                     PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     AttemptCount = table.Column<int>(type: "int", nullable: false),

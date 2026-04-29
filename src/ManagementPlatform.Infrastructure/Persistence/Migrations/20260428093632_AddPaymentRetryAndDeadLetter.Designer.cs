@@ -27,9 +27,9 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.CheckoutAttempt", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
@@ -46,8 +46,8 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
 
-                    b.Property<Guid>("OrderId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("OrderId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -64,15 +64,15 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.DeadLetterMessage", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("CheckoutAttemptId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("CheckoutAttemptId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("FailedAt")
                         .HasColumnType("datetimeoffset");
@@ -82,8 +82,8 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
-                    b.Property<Guid>("OutboxMessageId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("OutboxMessageId")
+                        .HasColumnType("bigint");
 
                     b.Property<string>("PayloadJson")
                         .IsRequired()
@@ -106,12 +106,12 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.Invoice", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
-                    b.Property<Guid>("CheckoutAttemptId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("CheckoutAttemptId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset?>("CompletedAt")
                         .HasColumnType("datetimeoffset");
@@ -138,9 +138,9 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.Order", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
@@ -167,8 +167,8 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .HasMaxLength(40)
                         .HasColumnType("nvarchar(40)");
 
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("TenantId")
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -181,15 +181,15 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.OutboxMessage", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Attempts")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("CheckoutAttemptId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("CheckoutAttemptId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");
@@ -232,9 +232,9 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("ManagementPlatform.Domain.PaymentTransaction", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<long>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
+                        .HasColumnType("bigint");
 
                     b.Property<decimal>("Amount")
                         .HasPrecision(18, 2)
@@ -243,8 +243,8 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     b.Property<int>("AttemptCount")
                         .HasColumnType("int");
 
-                    b.Property<Guid>("CheckoutAttemptId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<long>("CheckoutAttemptId")
+                        .HasColumnType("bigint");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("datetimeoffset");

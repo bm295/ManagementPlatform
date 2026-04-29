@@ -11,7 +11,7 @@ public sealed class CheckoutsController(CheckoutService checkoutService) : Contr
     [ProducesResponseType<CheckoutResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CheckoutResponse>> Get(
-        Guid checkoutId,
+        long checkoutId,
         CancellationToken cancellationToken)
     {
         return Ok(await checkoutService.GetAsync(checkoutId, cancellationToken));
