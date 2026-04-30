@@ -6,7 +6,7 @@ namespace ManagementPlatform.Application;
 public sealed class CheckoutService(
     IOrderRepository orderRepository,
     ICheckoutRepository checkoutRepository,
-    IUnitOfWork unitOfWork,
+    IAppDbSession unitOfWork,
     IPaymentGateway paymentGateway,
     IClock clock,
     PaymentRetryOptions paymentRetryOptions)
@@ -214,7 +214,7 @@ public sealed class CheckoutService(
             .Select(message => new IntegrationStatusDto(
                 message.Type,
                 message.Status,
-                message.Attempts,
+                message.AttemptCount,
                 message.LastError))
             .ToArray();
 
