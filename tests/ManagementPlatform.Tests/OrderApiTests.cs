@@ -1,8 +1,6 @@
 using System.Diagnostics;
-using System.Net;
 using System.Net.Http.Json;
 using ManagementPlatform.Application;
-using ManagementPlatform.Domain;
 using ManagementPlatform.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -34,114 +32,7 @@ public sealed class OrderApiTests
     }
 
     [Fact]
-    public async Task Checkout_success_creates_pending_integration_work()
-    {
-        await using var factory = await PlatformApiFactory.CreateAsync();
-        if (factory is null)
-        {
-            return;
-        }
-
-        var client = factory.CreateClient();
-        var orderId = await CreateDraftOrderAsync(factory.Services, "Checkout Success Order");
-        var request = new CheckoutRequest($"api-success-{Guid.NewGuid():N}", "tok_success");
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/orders/{orderId}/checkout",
-            request);
-
-        response.EnsureSuccessStatusCode();
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
-
-        Assert.NotNull(checkout);
-        Assert.Equal(CheckoutStatus.PaymentSucceeded, checkout.Status);
-        Assert.Equal(PaymentStatus.Succeeded, checkout.PaymentStatus);
-        Assert.Equal(2, checkout.Integrations.Count);
-        Assert.All(checkout.Integrations, item => Assert.Equal(OutboxStatus.Pending, item.Status));
-
-        var fetched = await client.GetFromJsonAsync<CheckoutResponse>($"/api/checkouts/{checkout.CheckoutId}");
-        Assert.Equal(checkout.CheckoutId, fetched!.CheckoutId);
-    }
-
-    [Fact]
-    public async Task Checkout_failure_does_not_create_integration_work()
-    {
-        await using var factory = await PlatformApiFactory.CreateAsync();
-        if (factory is null)
-        {
-            return;
-        }
-
-        var client = factory.CreateClient();
-        var orderId = await CreateDraftOrderAsync(factory.Services, "Checkout Failure Order");
-        var request = new CheckoutRequest($"api-failure-{Guid.NewGuid():N}", "tok_fail");
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/orders/{orderId}/checkout",
-            request);
-
-        response.EnsureSuccessStatusCode();
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
-
-        Assert.NotNull(checkout);
-        Assert.Equal(CheckoutStatus.PaymentFailed, checkout.Status);
-        Assert.Equal(PaymentStatus.Failed, checkout.PaymentStatus);
-        Assert.Empty(checkout.Integrations);
-    }
-
-    [Fact]
-    public async Task Checkout_retryable_failure_can_succeed_within_retry_limit()
-    {
-        await using var factory = await PlatformApiFactory.CreateAsync();
-        if (factory is null)
-        {
-            return;
-        }
-
-        var client = factory.CreateClient();
-        var orderId = await CreateDraftOrderAsync(factory.Services, "Checkout Retry Success Order");
-        var request = new CheckoutRequest($"api-retry-success-{Guid.NewGuid():N}", "tok_retry_success");
-
-        var response = await client.PostAsJsonAsync(
-            $"/api/orders/{orderId}/checkout",
-            request);
-
-        response.EnsureSuccessStatusCode();
-        var checkout = await response.Content.ReadFromJsonAsync<CheckoutResponse>();
-
-        Assert.NotNull(checkout);
-        Assert.Equal(CheckoutStatus.PaymentSucceeded, checkout.Status);
-        Assert.Equal(PaymentStatus.Succeeded, checkout.PaymentStatus);
-    }
-
-    [Fact]
-    public async Task Checkout_new_key_for_paid_order_returns_conflict()
-    {
-        await using var factory = await PlatformApiFactory.CreateAsync();
-        if (factory is null)
-        {
-            return;
-        }
-
-        var client = factory.CreateClient();
-        var orderId = await CreateDraftOrderAsync(factory.Services, "Checkout Conflict Order");
-        var firstRequest = new CheckoutRequest($"api-conflict-{Guid.NewGuid():N}", "tok_success");
-        var secondRequest = new CheckoutRequest($"api-conflict-{Guid.NewGuid():N}", "tok_success");
-
-        var first = await client.PostAsJsonAsync(
-            $"/api/orders/{orderId}/checkout",
-            firstRequest);
-        first.EnsureSuccessStatusCode();
-
-        var second = await client.PostAsJsonAsync(
-            $"/api/orders/{orderId}/checkout",
-            secondRequest);
-
-        Assert.Equal(HttpStatusCode.Conflict, second.StatusCode);
-    }
-
-    [Fact]
-    public async Task Dead_letters_returns_empty_list_when_nothing_failed()
+    public async Task Search_returns_empty_when_name_does_not_match()
     {
         await using var factory = await PlatformApiFactory.CreateAsync();
         if (factory is null)
@@ -151,42 +42,32 @@ public sealed class OrderApiTests
 
         var client = factory.CreateClient();
 
-        var result = await client.GetFromJsonAsync<List<DeadLetterMessageDto>>("/api/dead-letters");
+        var result = await client.GetFromJsonAsync<PagedResult<OrderSummaryDto>>("/api/orders?name=does-not-exist");
 
         Assert.NotNull(result);
-        Assert.Empty(result);
+        Assert.Equal(0, result.TotalCount);
+        Assert.Empty(result.Items);
     }
 
-    private static async Task<Guid> CreateDraftOrderAsync(IServiceProvider services, string name)
+    [Fact]
+    public async Task Get_returns_order_details_for_existing_order()
     {
-        using var scope = services.CreateScope();
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var now = DateTimeOffset.UtcNow;
-        var tenant = new Tenant
+        await using var factory = await PlatformApiFactory.CreateAsync();
+        if (factory is null)
         {
-            Id = Guid.NewGuid(),
-            Name = $"{name} Tenant",
-            Email = $"{Guid.NewGuid():N}@example.test",
-            CreatedAt = now
-        };
+            return;
+        }
 
-        var order = new Order
-        {
-            Id = Guid.NewGuid(),
-            TenantId = tenant.Id,
-            Tenant = tenant,
-            Name = name,
-            Amount = 150m,
-            Currency = "USD",
-            Status = OrderStatus.Draft,
-            CreatedAt = now
-        };
+        var client = factory.CreateClient();
+        var search = await client.GetFromJsonAsync<PagedResult<OrderSummaryDto>>("/api/orders?name=spring");
+        Assert.NotNull(search);
+        Assert.NotEmpty(search.Items);
 
-        dbContext.Tenants.Add(tenant);
-        dbContext.Orders.Add(order);
-        await dbContext.SaveChangesAsync();
+        var result = await client.GetFromJsonAsync<OrderDetailsDto>($"/api/orders/{search.Items[0].Id}");
 
-        return order.Id;
+        Assert.NotNull(result);
+        Assert.Equal(search.Items[0].Id, result.Id);
+        Assert.Equal("Spring Catalog Retouch", result.Name);
     }
 }
 

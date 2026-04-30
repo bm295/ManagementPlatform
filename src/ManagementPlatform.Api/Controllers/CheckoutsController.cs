@@ -7,7 +7,7 @@ namespace ManagementPlatform.Api.Controllers;
 [Route("api/checkouts")]
 public sealed class CheckoutsController(CheckoutService checkoutService) : ControllerBase
 {
-    [HttpGet("{checkoutId:guid}")]
+    [HttpGet("{checkoutId:long}")]
     [ProducesResponseType<CheckoutResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<CheckoutResponse>> Get(

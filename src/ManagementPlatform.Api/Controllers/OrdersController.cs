@@ -20,7 +20,7 @@ public sealed class OrdersController(
         return Ok(await orderQueryService.SearchAsync(name, page, pageSize, cancellationToken));
     }
 
-    [HttpGet("{orderId:guid}")]
+    [HttpGet("{orderId:long}")]
     [ProducesResponseType<OrderDetailsDto>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<OrderDetailsDto>> Get(
@@ -30,7 +30,7 @@ public sealed class OrdersController(
         return Ok(await orderQueryService.GetByIdAsync(orderId, cancellationToken));
     }
 
-    [HttpPost("{orderId:guid}/checkout")]
+    [HttpPost("{orderId:long}/checkout")]
     [ProducesResponseType<CheckoutResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound)]
