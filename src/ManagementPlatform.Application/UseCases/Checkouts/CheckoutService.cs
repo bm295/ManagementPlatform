@@ -6,7 +6,7 @@ namespace ManagementPlatform.Application;
 public sealed class CheckoutService(
     IOrderRepository orderRepository,
     ICheckoutRepository checkoutRepository,
-    IAppDbSession unitOfWork,
+    IAppDbSession appDbSession,
     IPaymentGateway paymentGateway,
     IClock clock,
     PaymentRetryOptions paymentRetryOptions)
@@ -63,7 +63,7 @@ public sealed class CheckoutService(
         };
 
         checkoutRepository.AddAttempt(attempt);
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await appDbSession.SaveChangesAsync(cancellationToken);
 
         var paymentResult = await ChargeWithRetryAsync(order, attempt, request.PaymentMethodToken, cancellationToken);
 
@@ -87,7 +87,7 @@ public sealed class CheckoutService(
             attempt.FailureReason = paymentResult.FailureReason ?? "Payment was declined.";
             attempt.CompletedAt = clock.UtcNow;
             order.Status = OrderStatus.Draft;
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await appDbSession.SaveChangesAsync(cancellationToken);
 
             return ToResponse(attempt);
         }
@@ -131,7 +131,7 @@ public sealed class CheckoutService(
         attempt.OutboxMessages.AddRange(outboxMessages);
         checkoutRepository.AddOutboxMessages(outboxMessages);
 
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+        await appDbSession.SaveChangesAsync(cancellationToken);
         return ToResponse(attempt);
     }
 
