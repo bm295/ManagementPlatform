@@ -18,17 +18,8 @@ public sealed class CheckoutService(
         CheckoutRequest request,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
-        {
-            throw new ValidationException("An idempotency key is required.");
-        }
+        var idempotencyKey = ValidateAndNormalizeRequest(request);
 
-        if (string.IsNullOrWhiteSpace(request.PaymentMethodToken))
-        {
-            throw new ValidationException("A payment method token is required.");
-        }
-
-        var idempotencyKey = request.IdempotencyKey.Trim();
         var existingAttempt = await checkoutRepository.GetByOrderAndIdempotencyKeyAsync(
             orderId,
             idempotencyKey,
@@ -39,6 +30,52 @@ public sealed class CheckoutService(
             return ToResponse(existingAttempt);
         }
 
+        var order = await LoadValidOrderAsync(orderId, cancellationToken);
+        var attempt = await CreatePendingAttemptAsync(order, idempotencyKey, cancellationToken);
+
+        var paymentResult = await ChargeWithRetryAsync(order, attempt, request.PaymentMethodToken, cancellationToken);
+        CreateAndAttachPaymentTransaction(order, attempt, paymentResult);
+
+        if (!paymentResult.Succeeded)
+        {
+            await HandlePaymentFailureAsync(order, attempt, paymentResult, cancellationToken);
+            return ToResponse(attempt);
+        }
+
+        MarkPaymentSuccess(order, attempt);
+        CreateAndAttachInvoice(attempt);
+        CreateAndAttachOutboxMessages(order, attempt);
+
+        await appDbSession.SaveChangesAsync(cancellationToken);
+        return ToResponse(attempt);
+    }
+
+    public async Task<CheckoutResponse> GetAsync(long checkoutId, CancellationToken cancellationToken)
+    {
+        var attempt = await checkoutRepository.GetByIdAsync(checkoutId, cancellationToken);
+
+        return attempt is null
+            ? throw new NotFoundException("Checkout was not found.")
+            : ToResponse(attempt);
+    }
+
+    private static string ValidateAndNormalizeRequest(CheckoutRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.IdempotencyKey))
+        {
+            throw new ValidationException("An idempotency key is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(request.PaymentMethodToken))
+        {
+            throw new ValidationException("A payment method token is required.");
+        }
+
+        return request.IdempotencyKey.Trim();
+    }
+
+    private async Task<Order> LoadValidOrderAsync(long orderId, CancellationToken cancellationToken)
+    {
         var order = await orderRepository.GetForCheckoutAsync(orderId, cancellationToken);
 
         if (order is null)
@@ -51,6 +88,14 @@ public sealed class CheckoutService(
             throw new ConflictException("Order is already paid or being processed.");
         }
 
+        return order;
+    }
+
+    private async Task<CheckoutAttempt> CreatePendingAttemptAsync(
+        Order order,
+        string idempotencyKey,
+        CancellationToken cancellationToken)
+    {
         var now = clock.UtcNow;
         order.Status = OrderStatus.CheckoutProcessing;
 
@@ -65,8 +110,14 @@ public sealed class CheckoutService(
         checkoutRepository.AddAttempt(attempt);
         await appDbSession.SaveChangesAsync(cancellationToken);
 
-        var paymentResult = await ChargeWithRetryAsync(order, attempt, request.PaymentMethodToken, cancellationToken);
+        return attempt;
+    }
 
+    private void CreateAndAttachPaymentTransaction(
+        Order order,
+        CheckoutAttempt attempt,
+        RetriedPaymentResult paymentResult)
+    {
         var paymentTransaction = new PaymentTransaction
         {
             CheckoutAttemptId = attempt.Id,
@@ -78,25 +129,35 @@ public sealed class CheckoutService(
             FailureReason = paymentResult.FailureReason,
             CreatedAt = clock.UtcNow
         };
+
         attempt.PaymentTransaction = paymentTransaction;
         checkoutRepository.AddPaymentTransaction(paymentTransaction);
+    }
 
-        if (!paymentResult.Succeeded)
-        {
-            attempt.Status = CheckoutStatus.PaymentFailed;
-            attempt.FailureReason = paymentResult.FailureReason ?? "Payment was declined.";
-            attempt.CompletedAt = clock.UtcNow;
-            order.Status = OrderStatus.Draft;
-            await appDbSession.SaveChangesAsync(cancellationToken);
+    private async Task HandlePaymentFailureAsync(
+        Order order,
+        CheckoutAttempt attempt,
+        RetriedPaymentResult paymentResult,
+        CancellationToken cancellationToken)
+    {
+        attempt.Status = CheckoutStatus.PaymentFailed;
+        attempt.FailureReason = paymentResult.FailureReason ?? "Payment was declined.";
+        attempt.CompletedAt = clock.UtcNow;
+        order.Status = OrderStatus.Draft;
 
-            return ToResponse(attempt);
-        }
+        await appDbSession.SaveChangesAsync(cancellationToken);
+    }
 
+    private void MarkPaymentSuccess(Order order, CheckoutAttempt attempt)
+    {
         attempt.Status = CheckoutStatus.PaymentSucceeded;
         attempt.CompletedAt = clock.UtcNow;
         order.Status = OrderStatus.Paid;
         order.PaidAt = clock.UtcNow;
+    }
 
+    private void CreateAndAttachInvoice(CheckoutAttempt attempt)
+    {
         var invoice = new Invoice
         {
             CheckoutAttemptId = attempt.Id,
@@ -106,7 +167,10 @@ public sealed class CheckoutService(
 
         attempt.Invoice = invoice;
         checkoutRepository.AddInvoice(invoice);
+    }
 
+    private void CreateAndAttachOutboxMessages(Order order, CheckoutAttempt attempt)
+    {
         var emailPayload = new CheckoutEmailPayload(
             attempt.Id,
             order.Id,
@@ -130,18 +194,6 @@ public sealed class CheckoutService(
 
         attempt.OutboxMessages.AddRange(outboxMessages);
         checkoutRepository.AddOutboxMessages(outboxMessages);
-
-        await appDbSession.SaveChangesAsync(cancellationToken);
-        return ToResponse(attempt);
-    }
-
-    public async Task<CheckoutResponse> GetAsync(long checkoutId, CancellationToken cancellationToken)
-    {
-        var attempt = await checkoutRepository.GetByIdAsync(checkoutId, cancellationToken);
-
-        return attempt is null
-            ? throw new NotFoundException("Checkout was not found.")
-            : ToResponse(attempt);
     }
 
     private async Task<RetriedPaymentResult> ChargeWithRetryAsync(
