@@ -36,7 +36,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     Name = table.Column<string>(type: "nvarchar(240)", maxLength: 240, nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     PaidAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
                 },
@@ -59,7 +59,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     OrderId = table.Column<long>(type: "bigint", nullable: false),
                     IdempotencyKey = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
                     FailureReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
@@ -82,7 +82,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CheckoutAttemptId = table.Column<long>(type: "bigint", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
                     FailureReason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     CompletedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true)
@@ -106,9 +106,9 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CheckoutAttemptId = table.Column<long>(type: "bigint", nullable: false),
                     Type = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
                     PayloadJson = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Attempts = table.Column<int>(type: "int", nullable: false),
+                    AttemptCount = table.Column<int>(type: "int", nullable: false),
                     LastError = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true),
                     CreatedAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: false),
                     NextAttemptAt = table.Column<DateTimeOffset>(type: "datetimeoffset", nullable: true),
@@ -133,7 +133,7 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     CheckoutAttemptId = table.Column<long>(type: "bigint", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Status = table.Column<byte>(type: "tinyint", nullable: false),
                     Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
                     Currency = table.Column<string>(type: "nvarchar(3)", maxLength: 3, nullable: false),
                     ProviderTransactionId = table.Column<string>(type: "nvarchar(120)", maxLength: 120, nullable: true),
@@ -155,12 +155,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 name: "IX_CheckoutAttempts_OrderId_IdempotencyKey",
                 table: "CheckoutAttempts",
                 columns: new[] { "OrderId", "IdempotencyKey" },
-                unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Tenants_Email",
-                table: "Tenants",
-                column: "Email",
                 unique: true);
 
             migrationBuilder.CreateIndex(

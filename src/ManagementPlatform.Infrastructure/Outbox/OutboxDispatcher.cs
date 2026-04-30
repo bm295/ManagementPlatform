@@ -6,16 +6,19 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
 
 namespace ManagementPlatform.Infrastructure.Outbox;
 
 public sealed class OutboxDispatcher(
     IServiceScopeFactory scopeFactory,
-    IOptions<OutboxOptions> options,
+    IConfiguration configuration,
     ILogger<OutboxDispatcher> logger) : BackgroundService
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+    private readonly int batchSize = Math.Max(configuration.GetValue<int?>("Outbox:BatchSize") ?? 25, 1);
+    private readonly int maxAttempts = Math.Max(configuration.GetValue<int?>("Outbox:MaxAttempts") ?? 5, 1);
+    private readonly TimeSpan pollInterval = configuration.GetValue<TimeSpan?>("Outbox:PollInterval") ?? TimeSpan.FromSeconds(5);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -34,7 +37,7 @@ public sealed class OutboxDispatcher(
                 logger.LogError(exception, "Outbox dispatch loop failed.");
             }
 
-            await Task.Delay(options.Value.PollInterval, stoppingToken);
+            await Task.Delay(pollInterval, stoppingToken);
         }
     }
 
@@ -49,7 +52,7 @@ public sealed class OutboxDispatcher(
             .Where(message => message.Status == OutboxStatus.Pending)
             .Where(message => message.NextAttemptAt == null || message.NextAttemptAt <= now)
             .OrderBy(message => message.CreatedAt)
-            .Take(Math.Max(options.Value.BatchSize, 1))
+            .Take(batchSize)
             .ToListAsync(cancellationToken);
 
         foreach (var message in messages)
@@ -67,7 +70,7 @@ public sealed class OutboxDispatcher(
         var clock = serviceProvider.GetRequiredService<IClock>();
 
         message.Status = OutboxStatus.Processing;
-        message.Attempts++;
+        message.AttemptCount++;
         message.LockedAt = clock.UtcNow;
         await dbContext.SaveChangesAsync(cancellationToken);
 
@@ -87,12 +90,12 @@ public sealed class OutboxDispatcher(
                 exception,
                 "Outbox message {MessageId} failed on attempt {Attempt}.",
                 message.Id,
-                message.Attempts);
+                message.AttemptCount);
 
             message.LastError = exception.Message;
             message.LockedAt = null;
 
-            if (message.Attempts >= Math.Max(options.Value.MaxAttempts, 1))
+            if (message.AttemptCount >= maxAttempts)
             {
                 message.Status = OutboxStatus.Failed;
                 dbContext.DeadLetterMessages.Add(new DeadLetterMessage
@@ -101,7 +104,7 @@ public sealed class OutboxDispatcher(
                     CheckoutAttemptId = message.CheckoutAttemptId,
                     Type = message.Type,
                     PayloadJson = message.PayloadJson,
-                    AttemptCount = message.Attempts,
+                    AttemptCount = message.AttemptCount,
                     FailureReason = exception.Message,
                     FailedAt = clock.UtcNow
                 });
@@ -109,7 +112,7 @@ public sealed class OutboxDispatcher(
             else
             {
                 message.Status = OutboxStatus.Pending;
-                message.NextAttemptAt = clock.UtcNow.AddSeconds(Math.Min(Math.Pow(2, message.Attempts), 60));
+                message.NextAttemptAt = clock.UtcNow.AddSeconds(Math.Min(Math.Pow(2, message.AttemptCount), 60));
             }
 
             await MarkInvoiceFailureAsync(dbContext, message, exception.Message, cancellationToken);

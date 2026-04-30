@@ -201,12 +201,14 @@ public sealed class CheckoutServiceTests
         var provider = services.BuildServiceProvider();
         var dispatcher = new ManagementPlatform.Infrastructure.Outbox.OutboxDispatcher(
             provider.GetRequiredService<IServiceScopeFactory>(),
-            Microsoft.Extensions.Options.Options.Create(new ManagementPlatform.Infrastructure.Outbox.OutboxOptions
-            {
-                BatchSize = 10,
-                MaxAttempts = 1,
-                PollInterval = TimeSpan.FromMilliseconds(1)
-            }),
+            new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Outbox:BatchSize"] = "10",
+                    ["Outbox:MaxAttempts"] = "1",
+                    ["Outbox:PollInterval"] = "00:00:00.001"
+                })
+                .Build(),
             provider.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ManagementPlatform.Infrastructure.Outbox.OutboxDispatcher>>());
 
         await dispatcher.DispatchBatchAsync(CancellationToken.None);

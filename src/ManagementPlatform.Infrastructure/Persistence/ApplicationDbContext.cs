@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ManagementPlatform.Infrastructure.Persistence;
 
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : DbContext(options), IUnitOfWork
+    : DbContext(options), IAppDbSession
 {
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Order> Orders => Set<Order>();
@@ -23,7 +23,6 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.HasKey(tenant => tenant.Id);
             entity.Property(tenant => tenant.Name).HasMaxLength(200).IsRequired();
             entity.Property(tenant => tenant.Email).HasMaxLength(320).IsRequired();
-            entity.HasIndex(tenant => tenant.Email).IsUnique();
         });
 
         modelBuilder.Entity<Order>(entity =>
@@ -33,7 +32,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.Property(order => order.Name).HasMaxLength(240).IsRequired();
             entity.Property(order => order.Amount).HasPrecision(18, 2);
             entity.Property(order => order.Currency).HasMaxLength(3).IsRequired();
-            entity.Property(order => order.Status).HasConversion<string>().HasMaxLength(40);
+            entity.Property(order => order.Status).HasConversion<byte>().HasColumnType("tinyint");
             entity.HasIndex(order => order.Name);
             entity.HasOne(order => order.Tenant)
                 .WithMany(tenant => tenant.Orders)
@@ -46,7 +45,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.ToTable("CheckoutAttempts");
             entity.HasKey(attempt => attempt.Id);
             entity.Property(attempt => attempt.IdempotencyKey).HasMaxLength(120).IsRequired();
-            entity.Property(attempt => attempt.Status).HasConversion<string>().HasMaxLength(40);
+            entity.Property(attempt => attempt.Status).HasConversion<byte>().HasColumnType("tinyint");
             entity.Property(attempt => attempt.FailureReason).HasMaxLength(500);
             entity.HasIndex(attempt => new { attempt.OrderId, attempt.IdempotencyKey }).IsUnique();
             entity.HasOne(attempt => attempt.Order)
@@ -59,7 +58,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         {
             entity.ToTable("PaymentTransactions");
             entity.HasKey(transaction => transaction.Id);
-            entity.Property(transaction => transaction.Status).HasConversion<string>().HasMaxLength(40);
+            entity.Property(transaction => transaction.Status).HasConversion<byte>().HasColumnType("tinyint");
             entity.Property(transaction => transaction.AttemptCount).IsRequired();
             entity.Property(transaction => transaction.Amount).HasPrecision(18, 2);
             entity.Property(transaction => transaction.Currency).HasMaxLength(3).IsRequired();
@@ -76,7 +75,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
         {
             entity.ToTable("Invoices");
             entity.HasKey(invoice => invoice.Id);
-            entity.Property(invoice => invoice.Status).HasConversion<string>().HasMaxLength(40);
+            entity.Property(invoice => invoice.Status).HasConversion<byte>().HasColumnType("tinyint");
             entity.Property(invoice => invoice.FailureReason).HasMaxLength(500);
             entity.HasOne(invoice => invoice.CheckoutAttempt)
                 .WithOne(attempt => attempt.Invoice)
@@ -89,7 +88,7 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.ToTable("OutboxMessages");
             entity.HasKey(message => message.Id);
             entity.Property(message => message.Type).HasConversion<string>().HasMaxLength(60);
-            entity.Property(message => message.Status).HasConversion<string>().HasMaxLength(40);
+            entity.Property(message => message.Status).HasConversion<byte>().HasColumnType("tinyint");
             entity.Property(message => message.PayloadJson).HasColumnType("nvarchar(max)").IsRequired();
             entity.Property(message => message.LastError).HasMaxLength(1000);
             entity.HasIndex(message => new { message.Status, message.NextAttemptAt });
@@ -107,7 +106,6 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.Property(message => message.PayloadJson).HasColumnType("nvarchar(max)").IsRequired();
             entity.Property(message => message.FailureReason).HasMaxLength(1000).IsRequired();
             entity.HasIndex(message => message.OutboxMessageId).IsUnique();
-            entity.HasIndex(message => message.FailedAt);
         });
     }
 }

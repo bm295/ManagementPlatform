@@ -38,11 +38,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_DeadLetterMessages_FailedAt",
-                table: "DeadLetterMessages",
-                column: "FailedAt");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_DeadLetterMessages_OutboxMessageId",
                 table: "DeadLetterMessages",
                 column: "OutboxMessageId",

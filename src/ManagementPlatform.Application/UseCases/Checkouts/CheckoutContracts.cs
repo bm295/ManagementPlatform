@@ -17,5 +17,5 @@ public sealed record CheckoutResponse(
 public sealed record IntegrationStatusDto(
     OutboxMessageType Type,
     OutboxStatus Status,
-    int Attempts,
+    int AttemptCount,
     string? LastError);

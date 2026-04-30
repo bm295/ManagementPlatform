@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 
 namespace ManagementPlatform.Infrastructure;
 
-public static class DependencyInjection
+public static class InfrastructureServiceCollectionExtensions
 {
     public static IServiceCollection AddInfrastructure(
         this IServiceCollection services,
@@ -18,7 +18,7 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("Connection string 'PlatformDatabase' is required.");
 
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
-        services.AddScoped<IUnitOfWork>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IAppDbSession>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICheckoutRepository, CheckoutRepository>();
         services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();
@@ -28,7 +28,6 @@ public static class DependencyInjection
         services.Configure<PaymentRetryOptions>(configuration.GetSection("PaymentRetry"));
         services.AddSingleton(provider => provider.GetRequiredService<IOptions<PaymentRetryOptions>>().Value);
         services.Configure<MockIntegrationOptions>(configuration.GetSection("MockIntegrations"));
-        services.Configure<OutboxOptions>(configuration.GetSection("Outbox"));
 
         services.AddScoped<IPaymentGateway, MockPaymentGateway>();
         services.AddScoped<IEmailSender, MockEmailSender>();

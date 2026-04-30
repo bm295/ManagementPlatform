@@ -178,7 +178,7 @@ function renderIntegrations(integrations) {
           <div class="integration">
             <h3>${typeText}</h3>
             <div class="status ${statusClass(statusText)}">${statusText}</div>
-            <p class="muted">Attempts: ${item.attempts}</p>
+            <p class="muted">Attempts: ${item.attemptCount}</p>
             ${item.lastError ? `<p>${escapeHtml(item.lastError)}</p>` : ""}
           </div>
         `;
