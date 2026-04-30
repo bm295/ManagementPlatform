@@ -22,3 +22,4 @@ public sealed class DeadLetterRepository(ApplicationDbContext dbContext) : IDead
             .ToListAsync(cancellationToken);
     }
 }
+

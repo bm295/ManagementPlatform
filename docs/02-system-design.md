@@ -116,25 +116,5 @@ The end-to-end flow sequence is documented separately in [05-flow-sequence.md](/
 
 ## Performance and Reliability
 
-This demo also includes a few simple performance choices.
+Performance and reliability details are documented separately in [10-performance-reliability.md](/abs/path/d:/Code/ManagementPlatform/docs/10-performance-reliability.md).
 
-- Order search is paged and indexed by name.
-- Checkout does not wait for email or production calls to finish.
-- Payment retry is bounded by a small max attempt count and short delay, so temporary failures can recover without creating long-running requests.
-- The outbox worker sends follow-up work in small batches and retries failures.
-- Failed outbox messages are moved to a dead letter table after the retry limit is reached.
-- Mock integrations can be configured to succeed or fail.
-- EF Core migrations create the SQL Server schema.
-
-For a real project, I would manage performance like this:
-
-- Keep the checkout API small and fast. The request should only do the work needed to confirm payment and save state.
-- Move slow follow-up work such as email and production calls to the outbox worker.
-- Page search results and limit page size to avoid large queries.
-- Add indexes based on real query patterns. Today the demo needs search by order name and outbox polling by status and next attempt time.
-- Measure database query time and review execution plans before adding more indexes.
-- Keep outbox processing in batches so one slow integration does not block all messages.
-- Add backoff for failed outbox retries so the system does not overload external services.
-- Scale the API and outbox worker separately if needed. Even in one deployable app, they can use different container or process counts later.
-- Add caching only after measuring that a read path needs it. I would not add caching to the checkout write path by default.
-- Add metrics for request time, queue depth, retry count, failed messages, and database response time.

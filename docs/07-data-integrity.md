@@ -3,7 +3,6 @@
 This file describes data integrity behavior in this demo only.
 
 - Checkout is idempotent per `(OrderId, IdempotencyKey)`, enforced by a unique constraint and by application lookup behavior.
-- Status values are stored as numeric enums (`tinyint`) in the database for order, checkout, payment transaction, invoice, and outbox records.
 - After successful payment, checkout state, payment transaction, invoice creation, and outbox message creation are saved together in one unit of work.
 - If payment fails, checkout is marked failed and the order is returned to `Draft`; no outbox follow-up messages are created.
 - Order state flow is restricted in code: only `Draft` orders can start checkout, and successful payment moves the order to `Paid`.
@@ -15,4 +14,5 @@ This file describes data integrity behavior in this demo only.
   - unique `(OrderId, IdempotencyKey)` on `CheckoutAttempts`
   - unique nullable `ProviderTransactionId` on `PaymentTransactions`
   - unique `OutboxMessageId` on `DeadLetterMessages`
-  - foreign keys between tenant/order/checkout/payment/invoice/outbox/dead-letter tables
+  - foreign keys between tenant/order/checkout/payment/invoice/outbox tables
+  - `DeadLetterMessages` is linked by `OutboxMessageId` convention and uniqueness (no database foreign key constraint)

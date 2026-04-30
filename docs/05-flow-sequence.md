@@ -40,6 +40,6 @@ Background worker flow after successful payment:
 1. Outbox worker polls SQL Server for pending `OutboxMessages`.
 2. Worker processes the email message by calling the mock email service.
 3. Worker processes the production message by calling the mock production service.
-4. Production service creates the invoice as part of that production step.
-5. Worker updates the `Invoices` row to succeeded.
-6. Worker marks each outbox message as succeeded, or schedules retry / dead-letter if it fails.
+4. Worker updates the existing `Invoices` row based on production processing result:
+   set `Succeeded` on success, or `Failed` with failure reason on error.
+5. Worker marks each outbox message as succeeded, or schedules retry / dead-letter if it fails.

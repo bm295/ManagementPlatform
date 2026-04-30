@@ -67,3 +67,4 @@ public sealed class OrderRepository(ApplicationDbContext dbContext) : IOrderRepo
             .SingleOrDefaultAsync(order => order.Id == orderId, cancellationToken);
     }
 }
+

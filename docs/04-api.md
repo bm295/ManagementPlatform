@@ -26,7 +26,14 @@ Request:
 }
 ```
 
-The response includes checkout id, order id, payment status, failure reason if there is one, and the status of follow-up work.
+The response includes:
+
+- `checkoutId`
+- `orderId`
+- `status` (`PaymentPending`, `PaymentFailed`, `PaymentSucceeded`)
+- `paymentStatus` (`Succeeded` or `Failed`, nullable)
+- `failureReason` (nullable)
+- `integrations[]` with `type`, `status`, `attemptCount`, and `lastError`
 
 Use `tok_fail` to simulate a failed payment.
 
@@ -51,6 +58,25 @@ Gets a checkout result and the status of its follow-up work.
 ## `GET /api/dead-letters`
 
 Gets recent outbox messages that failed too many times and were moved to the dead letter table.
+
+Each item includes:
+
+- `id`
+- `checkoutAttemptId`
+- `outboxMessageId`
+- `type`
+- `attemptCount`
+- `failureReason`
+- `failedAt`
+
+## Error Format
+
+Application errors are returned as `application/problem+json` using `ProblemDetails`.
+
+- `400` for validation errors
+- `404` for missing resources
+- `409` for state conflicts
+- `500` for unexpected server errors
 
 ## Demo Requests
 

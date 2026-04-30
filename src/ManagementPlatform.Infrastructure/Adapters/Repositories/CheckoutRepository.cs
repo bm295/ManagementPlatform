@@ -48,3 +48,4 @@ public sealed class CheckoutRepository(ApplicationDbContext dbContext) : IChecko
         dbContext.OutboxMessages.AddRange(messages);
     }
 }
+
