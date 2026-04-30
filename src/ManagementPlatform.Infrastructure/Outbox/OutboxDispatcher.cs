@@ -45,6 +45,7 @@ public sealed class OutboxDispatcher(
     {
         using var scope = scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var deadLetterRepository = scope.ServiceProvider.GetRequiredService<IDeadLetterRepository>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
 
         var now = clock.UtcNow;
@@ -57,13 +58,14 @@ public sealed class OutboxDispatcher(
 
         foreach (var message in messages)
         {
-            await DispatchMessageAsync(scope.ServiceProvider, dbContext, message, cancellationToken);
+            await DispatchMessageAsync(scope.ServiceProvider, dbContext, deadLetterRepository, message, cancellationToken);
         }
     }
 
     private async Task DispatchMessageAsync(
         IServiceProvider serviceProvider,
         ApplicationDbContext dbContext,
+        IDeadLetterRepository deadLetterRepository,
         OutboxMessage message,
         CancellationToken cancellationToken)
     {
@@ -98,7 +100,7 @@ public sealed class OutboxDispatcher(
             if (message.AttemptCount >= maxAttempts)
             {
                 message.Status = OutboxStatus.Failed;
-                dbContext.DeadLetterMessages.Add(new DeadLetterMessage
+                deadLetterRepository.Add(new DeadLetterMessage
                 {
                     OutboxMessageId = message.Id,
                     CheckoutAttemptId = message.CheckoutAttemptId,

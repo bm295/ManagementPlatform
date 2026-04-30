@@ -2,7 +2,7 @@ const orderStatus = ["Draft", "CheckoutProcessing", "Paid"];
 const checkoutStatus = ["PaymentPending", "PaymentFailed", "PaymentSucceeded"];
 const paymentStatus = ["Failed", "Succeeded"];
 const outboxStatus = ["Pending", "Processing", "Succeeded", "Failed"];
-const outboxType = ["Checkout email", "Invoice", "Production push"];
+const outboxType = ["Checkout email", "Production push", "Payment charge"];
 
 const state = {
   orders: [],
@@ -126,7 +126,7 @@ function renderOrders() {
   }).join("");
 
   ordersElement.querySelectorAll("[data-order-id]").forEach(button => {
-    button.addEventListener("click", () => selectOrder(button.dataset.orderId));
+    button.addEventListener("click", () => selectOrder(Number(button.dataset.orderId)));
   });
 }
 

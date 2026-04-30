@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ManagementPlatform.Infrastructure.Persistence;
 
 public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : DbContext(options), IAppDbSession
+    : DbContext(options), IAppDbContext
 {
     public DbSet<Tenant> Tenants => Set<Tenant>();
     public DbSet<Order> Orders => Set<Order>();
@@ -95,6 +95,11 @@ public sealed class ApplicationDbContext(DbContextOptions<ApplicationDbContext> 
             entity.HasOne(message => message.CheckoutAttempt)
                 .WithMany(attempt => attempt.OutboxMessages)
                 .HasForeignKey(message => message.CheckoutAttemptId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(message => message.DeadLetterMessage)
+                .WithOne(deadLetter => deadLetter.OutboxMessage)
+                .HasForeignKey<DeadLetterMessage>(deadLetter => deadLetter.OutboxMessageId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
 

@@ -13,6 +13,7 @@ This file describes data integrity behavior in this demo only.
 - Key uniqueness and linkage used by this demo:
   - unique `(OrderId, IdempotencyKey)` on `CheckoutAttempts`
   - unique nullable `ProviderTransactionId` on `PaymentTransactions`
+  - unique `CheckoutAttemptId` on `PaymentTransactions` (one-to-one)
+  - unique `CheckoutAttemptId` on `Invoices` (one-to-one)
   - unique `OutboxMessageId` on `DeadLetterMessages`
-  - foreign keys between tenant/order/checkout/payment/invoice/outbox tables
-  - `DeadLetterMessages` is linked by `OutboxMessageId` convention and uniqueness (no database foreign key constraint)
+  - foreign keys exist for tenant/order/checkout/payment/invoice/outbox/dead-letter relationships

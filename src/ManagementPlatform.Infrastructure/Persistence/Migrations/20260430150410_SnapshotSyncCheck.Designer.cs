@@ -4,6 +4,7 @@ using ManagementPlatform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ManagementPlatform.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260430150410_SnapshotSyncCheck")]
+    partial class SnapshotSyncCheck
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -313,17 +316,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
                     b.Navigation("Order");
                 });
 
-            modelBuilder.Entity("ManagementPlatform.Domain.DeadLetterMessage", b =>
-                {
-                    b.HasOne("ManagementPlatform.Domain.OutboxMessage", "OutboxMessage")
-                        .WithOne("DeadLetterMessage")
-                        .HasForeignKey("ManagementPlatform.Domain.DeadLetterMessage", "OutboxMessageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("OutboxMessage");
-                });
-
             modelBuilder.Entity("ManagementPlatform.Domain.Invoice", b =>
                 {
                     b.HasOne("ManagementPlatform.Domain.CheckoutAttempt", "CheckoutAttempt")
@@ -380,11 +372,6 @@ namespace ManagementPlatform.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ManagementPlatform.Domain.Order", b =>
                 {
                     b.Navigation("CheckoutAttempts");
-                });
-
-            modelBuilder.Entity("ManagementPlatform.Domain.OutboxMessage", b =>
-                {
-                    b.Navigation("DeadLetterMessage");
                 });
 
             modelBuilder.Entity("ManagementPlatform.Domain.Tenant", b =>

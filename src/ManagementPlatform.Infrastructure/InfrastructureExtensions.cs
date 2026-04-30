@@ -18,7 +18,7 @@ public static class InfrastructureServiceCollectionExtensions
             ?? throw new InvalidOperationException("Connection string 'PlatformDatabase' is required.");
 
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
-        services.AddScoped<IAppDbSession>(provider => provider.GetRequiredService<ApplicationDbContext>());
+        services.AddScoped<IAppDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
         services.AddScoped<IOrderRepository, OrderRepository>();
         services.AddScoped<ICheckoutRepository, CheckoutRepository>();
         services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();

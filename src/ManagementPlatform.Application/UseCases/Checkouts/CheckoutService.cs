@@ -6,7 +6,8 @@ namespace ManagementPlatform.Application;
 public sealed class CheckoutService(
     IOrderRepository orderRepository,
     ICheckoutRepository checkoutRepository,
-    IAppDbSession appDbSession,
+    IDeadLetterRepository deadLetterRepository,
+    IAppDbContext appDbContext,
     IPaymentGateway paymentGateway,
     IClock clock,
     PaymentRetryOptions paymentRetryOptions)
@@ -34,7 +35,7 @@ public sealed class CheckoutService(
         var attempt = await CreatePendingAttemptAsync(order, idempotencyKey, cancellationToken);
 
         var paymentResult = await ChargeWithRetryAsync(order, attempt, request.PaymentMethodToken, cancellationToken);
-        CreateAndAttachPaymentTransaction(order, attempt, paymentResult);
+        RecordPaymentTransaction(order, attempt, paymentResult);
 
         if (!paymentResult.Succeeded)
         {
@@ -43,10 +44,10 @@ public sealed class CheckoutService(
         }
 
         MarkPaymentSuccess(order, attempt);
-        CreateAndAttachInvoice(attempt);
-        CreateAndAttachOutboxMessages(order, attempt);
+        RecordInvoice(attempt);
+        RecordOutboxMessages(order, attempt);
 
-        await appDbSession.SaveChangesAsync(cancellationToken);
+        await appDbContext.SaveChangesAsync(cancellationToken);
         return ToResponse(attempt);
     }
 
@@ -108,12 +109,12 @@ public sealed class CheckoutService(
         };
 
         checkoutRepository.AddAttempt(attempt);
-        await appDbSession.SaveChangesAsync(cancellationToken);
+        await appDbContext.SaveChangesAsync(cancellationToken);
 
         return attempt;
     }
 
-    private void CreateAndAttachPaymentTransaction(
+    private void RecordPaymentTransaction(
         Order order,
         CheckoutAttempt attempt,
         RetriedPaymentResult paymentResult)
@@ -145,7 +146,38 @@ public sealed class CheckoutService(
         attempt.CompletedAt = clock.UtcNow;
         order.Status = OrderStatus.Draft;
 
-        await appDbSession.SaveChangesAsync(cancellationToken);
+        // Represent terminal payment failure as a failed outbox-like record so it can be dead-lettered with FK integrity.
+        var failedPaymentMessage = new OutboxMessage
+        {
+            CheckoutAttemptId = attempt.Id,
+            Type = OutboxMessageType.PaymentCharge,
+            Status = OutboxStatus.Failed,
+            PayloadJson = JsonSerializer.Serialize(new PaymentFailurePayload(
+                order.Id,
+                attempt.Id,
+                order.Amount,
+                order.Currency), JsonOptions),
+            AttemptCount = paymentResult.AttemptCount,
+            LastError = attempt.FailureReason,
+            CreatedAt = clock.UtcNow,
+            ProcessedAt = clock.UtcNow
+        };
+
+        attempt.OutboxMessages.Add(failedPaymentMessage);
+        checkoutRepository.AddOutboxMessages([failedPaymentMessage]);
+
+        deadLetterRepository.Add(new DeadLetterMessage
+        {
+            OutboxMessage = failedPaymentMessage,
+            CheckoutAttemptId = attempt.Id,
+            Type = OutboxMessageType.PaymentCharge,
+            PayloadJson = failedPaymentMessage.PayloadJson,
+            AttemptCount = paymentResult.AttemptCount,
+            FailureReason = attempt.FailureReason,
+            FailedAt = clock.UtcNow
+        });
+
+        await appDbContext.SaveChangesAsync(cancellationToken);
     }
 
     private void MarkPaymentSuccess(Order order, CheckoutAttempt attempt)
@@ -156,7 +188,7 @@ public sealed class CheckoutService(
         order.PaidAt = clock.UtcNow;
     }
 
-    private void CreateAndAttachInvoice(CheckoutAttempt attempt)
+    private void RecordInvoice(CheckoutAttempt attempt)
     {
         var invoice = new Invoice
         {
@@ -169,7 +201,7 @@ public sealed class CheckoutService(
         checkoutRepository.AddInvoice(invoice);
     }
 
-    private void CreateAndAttachOutboxMessages(Order order, CheckoutAttempt attempt)
+    private void RecordOutboxMessages(Order order, CheckoutAttempt attempt)
     {
         var emailPayload = new CheckoutEmailPayload(
             attempt.Id,
@@ -284,4 +316,11 @@ public sealed class CheckoutService(
         string? ProviderTransactionId,
         string? FailureReason,
         int AttemptCount);
+
+    private sealed record PaymentFailurePayload(
+        long OrderId,
+        long CheckoutAttemptId,
+        decimal Amount,
+        string Currency);
+
 }

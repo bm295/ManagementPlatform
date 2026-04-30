@@ -38,5 +38,6 @@ public enum OutboxStatus
 public enum OutboxMessageType
 {
     SendCheckoutEmail = 0,
-    PushToProduction = 1
+    PushToProduction = 1,
+    PaymentCharge = 2
 }

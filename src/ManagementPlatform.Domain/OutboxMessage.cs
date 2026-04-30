@@ -14,4 +14,5 @@ public sealed class OutboxMessage
     public DateTimeOffset? NextAttemptAt { get; set; }
     public DateTimeOffset? LockedAt { get; set; }
     public DateTimeOffset? ProcessedAt { get; set; }
+    public DeadLetterMessage? DeadLetterMessage { get; set; }
 }

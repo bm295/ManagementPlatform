@@ -1,6 +1,6 @@
 namespace ManagementPlatform.Application;
 
-public interface IAppDbSession
+public interface IAppDbContext
 {
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

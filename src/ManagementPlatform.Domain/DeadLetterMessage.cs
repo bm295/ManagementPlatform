@@ -4,6 +4,7 @@ public sealed class DeadLetterMessage
 {
     public long Id { get; set; }
     public long OutboxMessageId { get; set; }
+    public OutboxMessage OutboxMessage { get; set; } = null!;
     public long CheckoutAttemptId { get; set; }
     public OutboxMessageType Type { get; set; }
     public string PayloadJson { get; set; } = "{}";

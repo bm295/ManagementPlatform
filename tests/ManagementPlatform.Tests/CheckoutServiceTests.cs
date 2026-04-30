@@ -2,6 +2,7 @@ using ManagementPlatform.Application;
 using ManagementPlatform.Domain;
 using ManagementPlatform.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ManagementPlatform.Tests;
@@ -171,8 +172,8 @@ public sealed class CheckoutServiceTests
         {
             var checkoutAttempt = new CheckoutAttempt
             {
-                Id = Guid.NewGuid(),
-                OrderId = Guid.NewGuid(),
+                Id = 1001,
+                OrderId = 2001,
                 IdempotencyKey = "key",
                 Status = CheckoutStatus.PaymentSucceeded,
                 CreatedAt = DateTimeOffset.UtcNow
@@ -181,7 +182,7 @@ public sealed class CheckoutServiceTests
             setupContext.CheckoutAttempts.Add(checkoutAttempt);
             setupContext.OutboxMessages.Add(new OutboxMessage
             {
-                Id = Guid.NewGuid(),
+                Id = 3001,
                 CheckoutAttemptId = checkoutAttempt.Id,
                 Type = OutboxMessageType.SendCheckoutEmail,
                 PayloadJson = "{}",
@@ -195,6 +196,7 @@ public sealed class CheckoutServiceTests
         services.AddLogging();
         services.AddSingleton<IClock>(new FixedClock());
         services.AddScoped(_ => CreateDbContext(databaseName));
+        services.AddScoped<IDeadLetterRepository, DeadLetterRepository>();
         services.AddScoped<IEmailSender, FailingEmailSender>();
         services.AddScoped<IProductionClient, NoopProductionClient>();
 
@@ -235,6 +237,7 @@ public sealed class CheckoutServiceTests
         return new CheckoutService(
             new OrderRepository(dbContext),
             new CheckoutRepository(dbContext),
+            new DeadLetterRepository(dbContext),
             dbContext,
             paymentGateway,
             new FixedClock(),
@@ -245,12 +248,12 @@ public sealed class CheckoutServiceTests
             });
     }
 
-    private static async Task<Guid> SeedOrdersAsync(ApplicationDbContext dbContext)
+    private static async Task<long> SeedOrdersAsync(ApplicationDbContext dbContext)
     {
         var now = DateTimeOffset.Parse("2026-04-28T00:00:00+00:00");
         var tenant = new Tenant
         {
-            Id = Guid.NewGuid(),
+            Id = 1,
             Name = "Northwind Studio",
             Email = "orders@northwind.example",
             CreatedAt = now
@@ -258,7 +261,7 @@ public sealed class CheckoutServiceTests
 
         var firstOrder = new Order
         {
-            Id = Guid.NewGuid(),
+            Id = 10,
             TenantId = tenant.Id,
             Tenant = tenant,
             Name = "Spring Catalog Retouch",
@@ -272,7 +275,7 @@ public sealed class CheckoutServiceTests
             firstOrder,
             new Order
             {
-                Id = Guid.NewGuid(),
+                Id = 11,
                 TenantId = tenant.Id,
                 Tenant = tenant,
                 Name = "Marketplace Launch Batch",

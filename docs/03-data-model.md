@@ -103,3 +103,4 @@ CREATE UNIQUE INDEX IX_DeadLetterMessages_OutboxMessageId
 - one `CheckoutAttempts` row to one `PaymentTransactions` row
 - one `CheckoutAttempts` row to one `Invoices` row
 - one `CheckoutAttempts` row to many `OutboxMessages` rows
+- one `OutboxMessages` row to zero-or-one `DeadLetterMessages` row
