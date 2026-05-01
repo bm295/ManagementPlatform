@@ -65,8 +65,15 @@ public sealed class CheckoutServiceTests
         Assert.Equal(PaymentStatus.Failed, response.PaymentStatus);
         Assert.Equal(OrderStatus.Draft, order.Status);
         Assert.Equal("Declined", response.FailureReason);
-        Assert.Empty(response.Integrations);
-        Assert.Empty(dbContext.OutboxMessages);
+        Assert.Single(response.Integrations);
+        var failedIntegration = response.Integrations[0];
+        Assert.Equal(OutboxMessageType.PaymentCharge, failedIntegration.Type);
+        Assert.Equal(OutboxStatus.Failed, failedIntegration.Status);
+        Assert.Equal(1, failedIntegration.AttemptCount);
+        Assert.Equal("Declined", failedIntegration.LastError);
+        Assert.Single(dbContext.OutboxMessages);
+        Assert.Equal(OutboxStatus.Failed, (await dbContext.OutboxMessages.SingleAsync()).Status);
+        Assert.Single(dbContext.DeadLetterMessages);
         Assert.Empty(dbContext.Invoices);
     }
 
@@ -160,7 +167,9 @@ public sealed class CheckoutServiceTests
         Assert.Equal(3, payment.AttemptCount);
         Assert.Equal(3, paymentGateway.CallCount);
         Assert.Equal(OrderStatus.Draft, order.Status);
-        Assert.Empty(dbContext.OutboxMessages);
+        Assert.Single(dbContext.OutboxMessages);
+        Assert.Equal(OutboxStatus.Failed, (await dbContext.OutboxMessages.SingleAsync()).Status);
+        Assert.Single(dbContext.DeadLetterMessages);
     }
 
     [Fact]

@@ -6,7 +6,7 @@ It uses:
 
 - SQL Server for data storage
 - EF Core for database access and migrations
-- mock services for payment, email, invoice, and production system calls
+- mock services for payment, email, and production system calls
 - an outbox background worker for retrying work that happens after payment
 - a hexagonal architecture style inside a modular monolith
 - a small browser demo for the checkout flow
