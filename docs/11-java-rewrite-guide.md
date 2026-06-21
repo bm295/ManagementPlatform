@@ -89,11 +89,11 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [x] Tạo `CheckoutAttempt`.
 - [x] Tạo `PaymentTransaction`.
 - [x] Tạo `OutboxMessage`.
-- [ ] Tạo `DeadLetterMessage` nếu Java API cần trả dead letters riêng thay vì chỉ đọc outbox failed.
-- [ ] So sánh field của domain Java với domain C# hiện tại.
-- [ ] Bổ sung field còn thiếu để response API không bị lệch.
-- [ ] Đảm bảo `Order` có đủ thông tin tenant, amount, currency, status, created time, paid time.
-- [ ] Đảm bảo `CheckoutAttempt` có đủ id, order id, idempotency key, status, payment transaction, failure reason, created/completed time.
+- [x] Tạo `DeadLetterMessage` nếu Java API cần trả dead letters riêng thay vì chỉ đọc outbox failed.
+- [x] So sánh field của domain Java với domain C# hiện tại.
+- [x] Bổ sung field còn thiếu để response API không bị lệch.
+- [x] Đảm bảo `Order` có đủ thông tin tenant, amount, currency, status, created time, paid time.
+- [x] Đảm bảo `CheckoutAttempt` có đủ id, order id, idempotency key, status, payment transaction, failure reason, created/completed time.
 - [ ] Đảm bảo model không phụ thuộc HTTP hoặc framework.
 
 ## 6. Domain enum và status
@@ -211,7 +211,7 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 13. Dead letters và outbox
 
-- [ ] Quyết định Java dùng model `DeadLetterMessage` riêng hay derive từ failed outbox.
+- [x] Quyết định Java dùng model `DeadLetterMessage` riêng hay derive từ failed outbox.
 - [ ] Tạo message khi checkout thất bại.
 - [ ] Lưu reason của failure.
 - [ ] Lưu payload đủ thông tin order/checkout để debug.
