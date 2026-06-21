@@ -9,6 +9,7 @@ import java.util.List;
 
 public final class Order {
     private final long id;
+    private final long tenantId;
     private final Tenant tenant;
     private final String name;
     private final BigDecimal amount;
@@ -18,8 +19,9 @@ public final class Order {
     private Instant paidAt;
     private final List<CheckoutAttempt> checkoutAttempts = new ArrayList<>();
 
-    public Order(long id, Tenant tenant, String name, BigDecimal amount, String currency, Instant createdAt) {
+    public Order(long id, long tenantId, Tenant tenant, String name, BigDecimal amount, String currency, Instant createdAt) {
         this.id = id;
+        this.tenantId = tenantId;
         this.tenant = tenant;
         this.name = name;
         this.amount = amount;
@@ -29,6 +31,10 @@ public final class Order {
 
     public long id() {
         return id;
+    }
+
+    public long tenantId() {
+        return tenantId;
     }
 
     public Tenant tenant() {

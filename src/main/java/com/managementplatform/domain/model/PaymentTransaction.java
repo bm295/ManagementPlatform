@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 
 public record PaymentTransaction(
+    long id,
     long checkoutAttemptId,
     PaymentStatus status,
     int attemptCount,

@@ -15,6 +15,7 @@ public final class CheckoutAttempt {
     private Instant completedAt;
     private String failureReason;
     private PaymentTransaction paymentTransaction;
+    private Invoice invoice;
     private final List<OutboxMessage> outboxMessages = new ArrayList<>();
 
     public CheckoutAttempt(long id, long orderId, String idempotencyKey, Instant createdAt) {
@@ -56,6 +57,10 @@ public final class CheckoutAttempt {
         return paymentTransaction;
     }
 
+    public Invoice invoice() {
+        return invoice;
+    }
+
     public List<OutboxMessage> outboxMessages() {
         return Collections.unmodifiableList(outboxMessages);
     }
@@ -77,5 +82,9 @@ public final class CheckoutAttempt {
 
     public void paymentTransaction(PaymentTransaction paymentTransaction) {
         this.paymentTransaction = paymentTransaction;
+    }
+
+    public void invoice(Invoice invoice) {
+        this.invoice = invoice;
     }
 }

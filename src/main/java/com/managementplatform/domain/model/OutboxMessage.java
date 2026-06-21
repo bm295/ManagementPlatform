@@ -5,12 +5,17 @@ import com.managementplatform.domain.enums.OutboxStatus;
 import java.time.Instant;
 
 public record OutboxMessage(
+    long id,
     long checkoutAttemptId,
     OutboxMessageType type,
     OutboxStatus status,
-    String payload,
+    String payloadJson,
     int attemptCount,
     String lastError,
-    Instant createdAt
+    Instant createdAt,
+    Instant nextAttemptAt,
+    Instant lockedAt,
+    Instant processedAt,
+    DeadLetterMessage deadLetterMessage
 ) {
 }
