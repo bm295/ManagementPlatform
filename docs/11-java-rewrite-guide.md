@@ -67,20 +67,20 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 - [x] Tạo thư mục `src/main/java/com/managementplatform`.
 - [x] Tạo package `domain.model`.
-- [x] Tạo package enum cho domain status.
-- [ ] Đổi tên thư mục `src/main/java/com/managementplatform/domain/enum` thành `src/main/java/com/managementplatform/domain/enums` để khớp với package `com.managementplatform.domain.enums`.
-- [ ] Tạo package `application.port`.
-- [ ] Tạo package `application.usecase`.
-- [ ] Tạo package `application.dto`.
-- [ ] Tạo package `infrastructure.repository`.
-- [ ] Tạo package `infrastructure.gateway`.
-- [ ] Tạo package `infrastructure.outbox`.
-- [ ] Tạo package `infrastructure.config`.
-- [ ] Tạo package `presentation.http`.
-- [ ] Tạo package `presentation.controller` hoặc `presentation.handler`.
-- [ ] Tạo package `shared.exception`.
-- [ ] Tạo package `shared.util` nếu cần helper chung.
-- [ ] Tạo thư mục `src/test/java/com/managementplatform` cho test Java.
+- [x] Tạo package `domain.enums` cho domain status.
+- [x] Đổi tên thư mục `src/main/java/com/managementplatform/domain/enum` thành `src/main/java/com/managementplatform/domain/enums` để khớp với package `com.managementplatform.domain.enums`.
+- [x] Tạo package `application.port`.
+- [x] Tạo package `application.usecase`.
+- [x] Tạo package `application.dto`.
+- [x] Tạo package `infrastructure.repository`.
+- [x] Tạo package `infrastructure.gateway`.
+- [x] Tạo package `infrastructure.outbox`.
+- [x] Tạo package `infrastructure.config`.
+- [x] Tạo package `presentation.http`.
+- [x] Tạo package `presentation.controller` hoặc `presentation.handler`.
+- [x] Tạo package `shared.exception`.
+- [x] Tạo package `shared.util` nếu cần helper chung.
+- [x] Tạo thư mục `src/test/java/com/managementplatform` cho test Java.
 
 ## 5. Domain model
 
