@@ -115,18 +115,18 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 7. Application ports
 
-- [ ] Tạo `OrderRepository` port.
-- [ ] Tạo method tìm order theo id.
-- [ ] Tạo method tìm kiếm order theo page, page size, và name.
-- [ ] Tạo method đếm tổng số order theo filter.
-- [ ] Tạo `CheckoutRepository` port.
-- [ ] Tạo method tìm checkout theo id.
-- [ ] Tạo method tìm checkout theo `orderId + idempotencyKey`.
-- [ ] Tạo method lưu checkout attempt.
-- [ ] Tạo `DeadLetterRepository` hoặc `OutboxRepository` port.
-- [ ] Tạo `PaymentGateway` port.
-- [ ] Tạo DTO kết quả payment gồm status, attempt count, provider transaction id, và failure reason.
-- [ ] Tạo `Clock` hoặc time provider port nếu cần test deterministic.
+- [x] Tạo `OrderRepository` port.
+- [x] Tạo method tìm order theo id.
+- [x] Tạo method tìm kiếm order theo page, page size, và name.
+- [x] Tạo method đếm tổng số order theo filter.
+- [x] Tạo `CheckoutRepository` port.
+- [x] Tạo method tìm checkout theo id.
+- [x] Tạo method tìm checkout theo `orderId + idempotencyKey`.
+- [x] Tạo method lưu checkout attempt.
+- [x] Tạo `DeadLetterRepository` hoặc `OutboxRepository` port.
+- [x] Tạo `PaymentGateway` port.
+- [x] Tạo DTO kết quả payment gồm status, attempt count, provider transaction id, và failure reason.
+- [x] Tạo `Clock` hoặc time provider port nếu cần test deterministic.
 
 ## 8. Infrastructure in-memory repository
 
