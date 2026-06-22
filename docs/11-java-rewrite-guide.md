@@ -94,7 +94,7 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [x] Bổ sung field còn thiếu để response API không bị lệch.
 - [x] Đảm bảo `Order` có đủ thông tin tenant, amount, currency, status, created time, paid time.
 - [x] Đảm bảo `CheckoutAttempt` có đủ id, order id, idempotency key, status, payment transaction, failure reason, created/completed time.
-- [ ] Đảm bảo model không phụ thuộc HTTP hoặc framework.
+- [x] Đảm bảo model không phụ thuộc HTTP hoặc framework.
 
 ## 6. Domain enum và status
 
@@ -103,12 +103,12 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [x] Tạo `PaymentStatus`.
 - [x] Tạo `OutboxStatus`.
 - [x] Tạo `OutboxMessageType`.
-- [ ] Kiểm tra tên enum trả về JSON có tương thích với API hiện tại không.
-- [ ] Giữ các trạng thái order tối thiểu:
+- [x] Kiểm tra tên enum trả về JSON có tương thích với API hiện tại không.
+- [x] Giữ các trạng thái order tối thiểu:
   - [x] `DRAFT`.
   - [x] `CHECKOUT_PROCESSING`.
   - [x] `PAID`.
-- [ ] Giữ các trạng thái checkout tối thiểu:
+- [x] Giữ các trạng thái checkout tối thiểu:
   - [x] `PAYMENT_PENDING`.
   - [x] `PAYMENT_FAILED`.
   - [x] `PAYMENT_SUCCEEDED`.
