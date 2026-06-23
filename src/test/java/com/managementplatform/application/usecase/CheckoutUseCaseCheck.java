@@ -42,6 +42,7 @@ public final class CheckoutUseCaseCheck {
         throwsConflictWhenOrderIsNotDraft();
         marksOrderProcessingBeforePaymentChargeStep();
         recordsPaymentFailureAndDeadLetter();
+        recordsPaymentSuccessOrderAndPendingOutbox();
     }
 
     private static void validatesIdempotencyKeyIsRequired() {
@@ -153,6 +154,29 @@ public final class CheckoutUseCaseCheck {
         require(deadLetterRepository.findRecent().size() == 1, "failed payment should create a dead-letter message");
         require(response.integrations().size() == 1, "failed response should include failed integration status");
         require(response.integrations().getFirst().status() == OutboxStatus.FAILED, "failed response integration should be failed");
+    }
+
+    private static void recordsPaymentSuccessOrderAndPendingOutbox() {
+        Order order = order();
+        InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
+        CheckoutUseCase useCase = useCaseWith(order, checkoutRepository, new InMemoryDeadLetterRepository(), new MockPaymentGateway());
+
+        CheckoutResponse response = useCase.checkout(ORDER_ID, new CheckoutRequest("success-key", "tok_success"));
+        CheckoutAttempt attempt = checkoutRepository.findById(response.checkoutId()).orElseThrow();
+
+        require(response.status() == CheckoutStatus.PAYMENT_SUCCEEDED, "successful payment should return succeeded checkout status");
+        require(response.paymentStatus() == PaymentStatus.SUCCEEDED, "successful payment should return succeeded payment status");
+        require(response.failureReason() == null, "successful checkout should not include failure reason");
+        require(order.status() == OrderStatus.PAID, "successful payment should mark order PAID");
+        require(order.paidAt().equals(NOW), "successful payment should set paidAt from application clock");
+        require(attempt.status() == CheckoutStatus.PAYMENT_SUCCEEDED, "checkout attempt should be marked succeeded");
+        require(attempt.completedAt().equals(NOW), "successful checkout should set completedAt from application clock");
+        require(attempt.paymentTransaction().status() == PaymentStatus.SUCCEEDED, "payment transaction should be marked succeeded");
+        require(attempt.outboxMessages().size() == 1, "successful payment should create one pending outbox message");
+        require(attempt.outboxMessages().getFirst().type() == OutboxMessageType.SEND_CHECKOUT_EMAIL, "success outbox should represent checkout email");
+        require(attempt.outboxMessages().getFirst().status() == OutboxStatus.PENDING, "success outbox should be pending");
+        require(response.integrations().size() == 1, "successful response should include pending integration status");
+        require(response.integrations().getFirst().status() == OutboxStatus.PENDING, "successful response integration should be pending");
     }
 
     private static CheckoutUseCase useCaseWithOrder(Order order) {
