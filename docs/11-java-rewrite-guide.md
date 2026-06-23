@@ -155,22 +155,22 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 10. Checkout use case
 
-- [ ] Tạo request DTO cho checkout gồm `idempotencyKey` và `paymentMethodToken`.
-- [ ] Validate `idempotencyKey` không rỗng.
-- [ ] Validate `paymentMethodToken` không rỗng.
-- [ ] Tìm order theo `orderId`.
-- [ ] Nếu không có order, trả lỗi tương ứng HTTP 404 ở layer API.
-- [ ] Kiểm tra checkout cũ theo `orderId + idempotencyKey` trước khi charge.
-- [ ] Nếu checkout cũ đã tồn tại, trả lại kết quả cũ và không gọi payment gateway lần nữa.
-- [ ] Nếu order không ở trạng thái `DRAFT`, trả lỗi conflict HTTP 409 ở layer API.
-- [ ] Đánh dấu order sang `CHECKOUT_PROCESSING` trước khi charge.
-- [ ] Gọi mock payment gateway.
+- [x] Tạo request DTO cho checkout gồm `idempotencyKey` và `paymentMethodToken`.
+- [x] Validate `idempotencyKey` không rỗng.
+- [x] Validate `paymentMethodToken` không rỗng.
+- [x] Tìm order theo `orderId`.
+- [x] Nếu không có order, trả lỗi tương ứng HTTP 404 ở layer API.
+- [x] Kiểm tra checkout cũ theo `orderId + idempotencyKey` trước khi charge.
+- [x] Nếu checkout cũ đã tồn tại, trả lại kết quả cũ và không gọi payment gateway lần nữa.
+- [x] Nếu order không ở trạng thái `DRAFT`, trả lỗi conflict HTTP 409 ở layer API.
+- [x] Đánh dấu order sang `CHECKOUT_PROCESSING` trước khi charge.
+- [x] Gọi mock payment gateway.
 - [ ] Khi payment thất bại:
-  - [ ] Lưu checkout status `PAYMENT_FAILED`.
-  - [ ] Lưu payment transaction failed.
-  - [ ] Rollback order về `DRAFT`.
-  - [ ] Tạo dead-letter hoặc outbox failed record.
-  - [ ] Trả response lỗi/failed tương thích API hiện tại.
+  - [x] Lưu checkout status `PAYMENT_FAILED`.
+  - [x] Lưu payment transaction failed.
+  - [x] Rollback order về `DRAFT`.
+  - [x] Tạo dead-letter hoặc outbox failed record.
+  - [x] Trả response lỗi/failed tương thích API hiện tại.
 - [ ] Khi payment thành công:
   - [ ] Lưu checkout status `PAYMENT_SUCCEEDED`.
   - [ ] Lưu payment transaction succeeded.
