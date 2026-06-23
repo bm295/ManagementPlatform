@@ -130,28 +130,28 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 8. Infrastructure in-memory repository
 
-- [ ] Tạo in-memory repository dùng `ConcurrentHashMap`.
-- [ ] Seed dữ liệu demo order giống hoặc tương đương bản C#.
-- [ ] Implement tìm order theo id.
-- [ ] Implement search order theo tên.
-- [ ] Implement phân trang order.
-- [ ] Implement count order theo filter.
-- [ ] Implement lưu checkout attempt.
-- [ ] Implement tìm checkout theo id.
-- [ ] Implement tìm checkout theo `orderId + idempotencyKey`.
-- [ ] Implement lưu outbox/dead-letter message.
-- [ ] Đảm bảo thao tác checkout đủ an toàn khi có request song song cho cùng order.
-- [ ] Viết test cho idempotency ở repository hoặc service level.
+- [x] Tạo in-memory repository dùng `ConcurrentHashMap`.
+- [x] Seed dữ liệu demo order giống hoặc tương đương bản C#.
+- [x] Implement tìm order theo id.
+- [x] Implement search order theo tên.
+- [x] Implement phân trang order.
+- [x] Implement count order theo filter.
+- [x] Implement lưu checkout attempt.
+- [x] Implement tìm checkout theo id.
+- [x] Implement tìm checkout theo `orderId + idempotencyKey`.
+- [x] Implement lưu outbox/dead-letter message.
+- [x] Đảm bảo thao tác checkout đủ an toàn khi có request song song cho cùng order.
+- [x] Viết test cho idempotency ở repository hoặc service level.
 
 ## 9. Mock payment gateway
 
-- [ ] Tạo implementation `MockPaymentGateway`.
-- [ ] Nếu payment token chứa `decline` thì trả thất bại.
-- [ ] Nếu payment token chứa `fail` thì trả thất bại.
-- [ ] Nếu payment token chứa `retry` thì trả thành công với `attemptCount > 1`.
-- [ ] Nếu token bình thường thì trả thành công với `attemptCount = 1`.
-- [ ] Trả `providerTransactionId` ổn định đủ để debug.
-- [ ] Trả `failureReason` rõ ràng khi thất bại.
+- [x] Tạo implementation `MockPaymentGateway`.
+- [x] Nếu payment token chứa `decline` thì trả thất bại.
+- [x] Nếu payment token chứa `fail` thì trả thất bại.
+- [x] Nếu payment token chứa `retry` thì trả thành công với `attemptCount > 1`.
+- [x] Nếu token bình thường thì trả thành công với `attemptCount = 1`.
+- [x] Trả `providerTransactionId` ổn định đủ để debug.
+- [x] Trả `failureReason` rõ ràng khi thất bại.
 
 ## 10. Checkout use case
 
