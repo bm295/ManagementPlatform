@@ -56,7 +56,7 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [x] Cấu hình `maven-compiler-plugin`.
 - [x] Cấu hình `maven-surefire-plugin`.
 - [x] Cấu hình `maven-jar-plugin`.
-- [ ] Kiểm tra lại `mainClass` trong manifest sau khi tạo lớp application thật.
+- [x] Kiểm tra lại `mainClass` trong manifest sau khi tạo lớp application thật.
 - [ ] Chạy build Maven sau mỗi nhóm thay đổi lớn:
 
   ```bash
@@ -172,42 +172,42 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
   - [x] Tạo dead-letter hoặc outbox failed record.
   - [x] Trả response lỗi/failed tương thích API hiện tại.
 - [ ] Khi payment thành công:
-  - [ ] Lưu checkout status `PAYMENT_SUCCEEDED`.
-  - [ ] Lưu payment transaction succeeded.
-  - [ ] Đánh dấu order `PAID`.
-  - [ ] Set `paidAt`.
-  - [ ] Tạo outbox pending message.
-  - [ ] Trả response success tương thích API hiện tại.
+  - [x] Lưu checkout status `PAYMENT_SUCCEEDED`.
+  - [x] Lưu payment transaction succeeded.
+  - [x] Đánh dấu order `PAID`.
+  - [x] Set `paidAt`.
+  - [x] Tạo outbox pending message.
+  - [x] Trả response success tương thích API hiện tại.
 
 ## 11. HTTP API
 
-- [ ] Tạo `ManagementPlatformApplication` làm entry point.
-- [ ] Tạo HTTP server bằng `com.sun.net.httpserver.HttpServer`.
-- [ ] Đọc port từ environment hoặc dùng default rõ ràng.
-- [ ] Tạo route `GET /api/orders`.
-- [ ] Parse query `page`.
-- [ ] Parse query `pageSize`.
-- [ ] Parse query `name`.
-- [ ] Tạo route `GET /api/orders/{id}`.
-- [ ] Tạo route `POST /api/orders/{id}/checkout`.
-- [ ] Parse JSON body checkout.
-- [ ] Tạo route `GET /api/checkouts/{id}`.
-- [ ] Tạo route `GET /api/dead-letters`.
-- [ ] Trả `Content-Type: application/json` cho JSON response.
-- [ ] Map validation error sang HTTP 400.
-- [ ] Map not found sang HTTP 404.
-- [ ] Map order conflict sang HTTP 409.
-- [ ] Map lỗi không mong muốn sang HTTP 500.
-- [ ] Chuẩn hóa error response body.
+- [x] Tạo `ManagementPlatformApplication` làm entry point.
+- [x] Tạo HTTP server bằng `com.sun.net.httpserver.HttpServer`.
+- [x] Đọc port từ environment hoặc dùng default rõ ràng.
+- [x] Tạo route `GET /api/orders`.
+- [x] Parse query `page`.
+- [x] Parse query `pageSize`.
+- [x] Parse query `name`.
+- [x] Tạo route `GET /api/orders/{id}`.
+- [x] Tạo route `POST /api/orders/{id}/checkout`.
+- [x] Parse JSON body checkout.
+- [x] Tạo route `GET /api/checkouts/{id}`.
+- [x] Tạo route `GET /api/dead-letters`.
+- [x] Trả `Content-Type: application/json` cho JSON response.
+- [x] Map validation error sang HTTP 400.
+- [x] Map not found sang HTTP 404.
+- [x] Map order conflict sang HTTP 409.
+- [x] Map lỗi không mong muốn sang HTTP 500.
+- [x] Chuẩn hóa error response body.
 
 ## 12. JSON mapping
 
-- [ ] Chọn cách serialize JSON không làm phức tạp demo.
-- [ ] Nếu không dùng thư viện ngoài, tạo helper escape string đúng cách.
-- [ ] Serialize số tiền không mất precision.
-- [ ] Serialize timestamp theo ISO-8601.
-- [ ] Serialize enum theo đúng tên API đang dùng.
-- [ ] Viết test hoặc snapshot nhỏ cho JSON response chính.
+- [x] Chọn cách serialize JSON không làm phức tạp demo.
+- [x] Nếu không dùng thư viện ngoài, tạo helper escape string đúng cách.
+- [x] Serialize số tiền không mất precision.
+- [x] Serialize timestamp theo ISO-8601.
+- [x] Serialize enum theo đúng tên API đang dùng.
+- [x] Viết test hoặc snapshot nhỏ cho JSON response chính.
 
 ## 13. Dead letters và outbox
 
@@ -217,13 +217,13 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [ ] Lưu payload đủ thông tin order/checkout để debug.
 - [ ] Implement list dead letters.
 - [ ] Đảm bảo `GET /api/dead-letters` trả dữ liệu tương thích docs API.
-- [ ] Với checkout thành công, tạo outbox message status `PENDING`.
+- [x] Với checkout thành công, tạo outbox message status `PENDING`.
 
 ## 14. Test cần có
 
 - [ ] Tạo Java test project dưới `src/test/java`.
 - [ ] Thêm dependency test nếu cần.
-- [ ] Test checkout success.
+- [x] Test checkout success.
 - [ ] Test checkout failure với token chứa `decline`.
 - [ ] Test checkout failure với token chứa `fail`.
 - [ ] Test checkout retry token trả thành công và attempt count > 1.

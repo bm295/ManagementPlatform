@@ -1,0 +1,151 @@
+package com.managementplatform;
+
+import com.managementplatform.application.dto.CheckoutRequest;
+import com.sun.net.httpserver.HttpServer;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.Map;
+
+public final class ManagementPlatformApplicationCheck {
+    private ManagementPlatformApplicationCheck() {
+    }
+
+    public static void main(String[] args) throws Exception {
+        usesDefaultPortWhenEnvironmentIsMissing();
+        readsPortFromEnvironment();
+        rejectsInvalidPort();
+        parsesCheckoutJsonBody();
+        servesOrderRoutesAndCheckout();
+    }
+
+    private static void usesDefaultPortWhenEnvironmentIsMissing() {
+        require(ManagementPlatformApplication.portFromEnvironment(Map.of()) == ManagementPlatformApplication.DEFAULT_PORT,
+            "missing PORT should use default port");
+        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", " ")) == ManagementPlatformApplication.DEFAULT_PORT,
+            "blank PORT should use default port");
+    }
+
+    private static void readsPortFromEnvironment() {
+        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", "9090")) == 9090,
+            "PORT environment value should be used");
+        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", " 7070 ")) == 7070,
+            "PORT environment value should be trimmed");
+    }
+
+    private static void rejectsInvalidPort() {
+        expectInvalidPort("abc");
+        expectInvalidPort("65536");
+        expectInvalidPort("-1");
+    }
+
+    private static void parsesCheckoutJsonBody() {
+        CheckoutRequest request = ManagementPlatformApplication.checkoutRequestFromJson("{\"idempotencyKey\":\"idem-1\",\"paymentMethodToken\":\"tok_success\"}");
+
+        require(request.idempotencyKey().equals("idem-1"), "JSON parser should read idempotencyKey");
+        require(request.paymentMethodToken().equals("tok_success"), "JSON parser should read paymentMethodToken");
+    }
+
+    private static void servesOrderRoutesAndCheckout() throws Exception {
+        HttpServer server = ManagementPlatformApplication.createServer(0);
+        server.start();
+        try {
+            HttpClient client = HttpClient.newHttpClient();
+            String baseUrl = "http://localhost:%d".formatted(server.getAddress().getPort());
+
+            HttpResponse<String> orders = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=1&pageSize=2&name=Acme")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(orders.statusCode() == 200, "GET /api/orders should return HTTP 200");
+            require(orders.body().contains("\"page\":1"), "orders response should include parsed page");
+            require(orders.body().contains("\"pageSize\":2"), "orders response should include parsed pageSize");
+            require(orders.body().contains("Acme"), "orders response should apply name query");
+
+            HttpResponse<String> order = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/1")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(order.statusCode() == 200, "GET /api/orders/{id} should return HTTP 200");
+            require(order.body().equals("{\"id\":1,\"tenantId\":1,\"tenant\":{\"id\":1,\"name\":\"Acme Corp\",\"email\":\"ops@acme.example\"},\"name\":\"Acme onboarding package\",\"amount\":199.00,\"currency\":\"USD\",\"status\":\"Draft\",\"createdAt\":\"2026-04-28T08:02:00Z\",\"paidAt\":null}"),
+                "order detail response should match the JSON snapshot");
+
+            HttpResponse<String> checkout = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/1/checkout"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"idempotencyKey\":\"http-checkout-1\",\"paymentMethodToken\":\"tok_success\"}"))
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(checkout.statusCode() == 200, "POST /api/orders/{id}/checkout should return HTTP 200");
+            require(checkout.body().equals("{\"checkoutId\":1,\"orderId\":1,\"status\":\"PaymentSucceeded\",\"paymentStatus\":\"Succeeded\",\"failureReason\":null,\"integrations\":[{\"type\":\"SendCheckoutEmail\",\"status\":\"Pending\",\"attemptCount\":0,\"lastError\":null}]}"),
+                "checkout response should match the JSON snapshot");
+            require(checkout.headers().firstValue("Content-Type").orElse("").startsWith("application/json"),
+                "checkout response should use JSON content type");
+
+            HttpResponse<String> checkoutStatus = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/checkouts/1")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(checkoutStatus.statusCode() == 200, "GET /api/checkouts/{id} should return HTTP 200");
+            require(checkoutStatus.body().contains("\"checkoutId\":1"), "checkout status response should include checkout id");
+
+            HttpResponse<String> failedCheckout = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/2/checkout"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"idempotencyKey\":\"http-checkout-fail\",\"paymentMethodToken\":\"tok_fail\"}"))
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(failedCheckout.statusCode() == 200, "failed payment checkout should still return HTTP 200");
+
+            HttpResponse<String> deadLetters = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/dead-letters")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(deadLetters.statusCode() == 200, "GET /api/dead-letters should return HTTP 200");
+            require(deadLetters.body().contains("\"type\":\"PaymentCharge\""), "dead letters response should include payment charge failure");
+
+            HttpResponse<String> badRequest = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=abc")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(badRequest.statusCode() == 400, "validation errors should map to HTTP 400");
+            require(badRequest.headers().firstValue("Content-Type").orElse("").startsWith("application/problem+json"),
+                "validation errors should use problem JSON content type");
+
+            HttpResponse<String> missingOrder = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/9999")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(missingOrder.statusCode() == 404, "missing resources should map to HTTP 404");
+
+            HttpResponse<String> conflict = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/1/checkout"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"idempotencyKey\":\"different-key\",\"paymentMethodToken\":\"tok_success\"}"))
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(conflict.statusCode() == 409, "order conflicts should map to HTTP 409");
+        } finally {
+            server.stop(0);
+        }
+    }
+
+    private static void expectInvalidPort(String value) {
+        try {
+            ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", value));
+            throw new AssertionError("invalid PORT should throw IllegalArgumentException");
+        } catch (IllegalArgumentException exception) {
+            require(exception.getMessage().startsWith("PORT must"), "invalid PORT message should mention PORT");
+        }
+    }
+
+    private static void require(boolean condition, String message) {
+        if (!condition) {
+            throw new AssertionError(message);
+        }
+    }
+}

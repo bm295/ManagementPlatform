@@ -99,8 +99,7 @@ public final class CheckoutUseCase {
         if (paymentResult.status() == PaymentStatus.FAILED) {
             handlePaymentFailure(order, attempt, paymentResult);
         } else {
-            attempt.succeed(now());
-            order.markPaid(now());
+            handlePaymentSuccess(order, attempt);
         }
 
         checkoutRepository.save(attempt);
@@ -119,6 +118,28 @@ public final class CheckoutUseCase {
             paymentResult.failureReason(),
             now()
         ));
+    }
+
+    private void handlePaymentSuccess(Order order, CheckoutAttempt attempt) {
+        Instant completedAt = now();
+        attempt.succeed(completedAt);
+        order.markPaid(completedAt);
+
+        OutboxMessage pendingCheckoutMessage = new OutboxMessage(
+            outboxMessageIds.getAndIncrement(),
+            attempt.id(),
+            OutboxMessageType.SEND_CHECKOUT_EMAIL,
+            OutboxStatus.PENDING,
+            checkoutSuccessPayload(order, attempt),
+            0,
+            null,
+            now(),
+            null,
+            null,
+            null,
+            null
+        );
+        attempt.addOutboxMessage(pendingCheckoutMessage);
     }
 
     private void handlePaymentFailure(Order order, CheckoutAttempt attempt, PaymentGatewayResult paymentResult) {
@@ -152,6 +173,17 @@ public final class CheckoutUseCase {
             failureReason,
             now()
         ));
+    }
+
+    private String checkoutSuccessPayload(Order order, CheckoutAttempt attempt) {
+        return "{\"orderId\":%d,\"checkoutAttemptId\":%d,\"orderName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\"}".formatted(
+            order.id(),
+            attempt.id(),
+            order.name(),
+            order.tenant().email(),
+            order.amount(),
+            order.currency()
+        );
     }
 
     private String paymentFailurePayload(Order order, CheckoutAttempt attempt) {
