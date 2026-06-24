@@ -71,7 +71,7 @@ Each item includes:
 
 ## Error Format
 
-Application errors are returned as `application/problem+json` using `ProblemDetails`.
+Application errors are returned as `application/problem+json` with a small Problem Details-compatible JSON body.
 
 - `400` for validation errors
 - `404` for missing resources
@@ -80,4 +80,4 @@ Application errors are returned as `application/problem+json` using `ProblemDeta
 
 ## Demo Requests
 
-The repo includes example requests in [ManagementPlatform.Api.http](/abs/path/d:/Code/ManagementPlatform/src/ManagementPlatform.Api/ManagementPlatform.Api.http).
+Example `curl` commands are included in the root `README.md`.

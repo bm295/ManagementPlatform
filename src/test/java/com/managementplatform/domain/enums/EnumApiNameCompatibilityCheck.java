@@ -11,7 +11,7 @@ public final class EnumApiNameCompatibilityCheck {
             OrderStatus.DRAFT,
             OrderStatus.CHECKOUT_PROCESSING,
             OrderStatus.PAID
-        )), "OrderStatus must keep the C# API-compatible minimum states");
+        )), "OrderStatus must keep the documented API-compatible minimum states");
         require(OrderStatus.DRAFT.apiName().equals("Draft"), "DRAFT must serialize as Draft");
         require(OrderStatus.CHECKOUT_PROCESSING.apiName().equals("CheckoutProcessing"), "CHECKOUT_PROCESSING must serialize as CheckoutProcessing");
         require(OrderStatus.PAID.apiName().equals("Paid"), "PAID must serialize as Paid");
@@ -20,7 +20,7 @@ public final class EnumApiNameCompatibilityCheck {
             CheckoutStatus.PAYMENT_PENDING,
             CheckoutStatus.PAYMENT_FAILED,
             CheckoutStatus.PAYMENT_SUCCEEDED
-        )), "CheckoutStatus must keep the C# API-compatible minimum states");
+        )), "CheckoutStatus must keep the documented API-compatible minimum states");
         require(CheckoutStatus.PAYMENT_PENDING.apiName().equals("PaymentPending"), "PAYMENT_PENDING must serialize as PaymentPending");
         require(CheckoutStatus.PAYMENT_FAILED.apiName().equals("PaymentFailed"), "PAYMENT_FAILED must serialize as PaymentFailed");
         require(CheckoutStatus.PAYMENT_SUCCEEDED.apiName().equals("PaymentSucceeded"), "PAYMENT_SUCCEEDED must serialize as PaymentSucceeded");

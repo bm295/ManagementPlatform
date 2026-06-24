@@ -1,19 +1,19 @@
 # Java rewrite todo list
 
-Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Management Platform từ C# sang Java. Mục tiêu hiện tại là hoàn thiện Java demo app giữ cùng hành vi API chính: tìm đơn hàng, checkout, tra cứu checkout, và xem dead letters.
+Tài liệu này là checklist nhỏ cho bản Java demo app. Mục tiêu hiện tại là giữ cùng hành vi API chính: tìm đơn hàng, checkout, tra cứu checkout, và xem dead letters.
 
 ## 1. Mục tiêu và phạm vi
 
 - [x] Xác định runtime Java 21 cho bản rewrite.
 - [x] Dùng Maven để build, test, và package ứng dụng.
-- [ ] Giữ response JSON của Java API tương thích với API C# hiện tại.
+- [x] Giữ response JSON của Java API tương thích với API contract.
 - [ ] Giữ các flow nghiệp vụ chính:
   - [ ] Tìm kiếm danh sách order.
   - [ ] Xem chi tiết một order.
   - [ ] Checkout một order.
   - [ ] Xem trạng thái checkout.
   - [ ] Xem danh sách dead letters.
-- [ ] Không thay thế code C# hiện tại cho tới khi bản Java đủ chức năng tương đương.
+- [x] Xóa implementation .NET cũ sau khi bản Java đã có compatibility check.
 
 ## 2. Chuẩn bị môi trường
 
@@ -90,7 +90,7 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 - [x] Tạo `PaymentTransaction`.
 - [x] Tạo `OutboxMessage`.
 - [x] Tạo `DeadLetterMessage` nếu Java API cần trả dead letters riêng thay vì chỉ đọc outbox failed.
-- [x] So sánh field của domain Java với domain C# hiện tại.
+- [x] So sánh field của domain Java với domain API contract.
 - [x] Bổ sung field còn thiếu để response API không bị lệch.
 - [x] Đảm bảo `Order` có đủ thông tin tenant, amount, currency, status, created time, paid time.
 - [x] Đảm bảo `CheckoutAttempt` có đủ id, order id, idempotency key, status, payment transaction, failure reason, created/completed time.
@@ -131,7 +131,7 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 ## 8. Infrastructure in-memory repository
 
 - [x] Tạo in-memory repository dùng `ConcurrentHashMap`.
-- [x] Seed dữ liệu demo order giống hoặc tương đương bản C#.
+- [x] Seed dữ liệu demo order giống hoặc tương đương API contract.
 - [x] Implement tìm order theo id.
 - [x] Implement search order theo tên.
 - [x] Implement phân trang order.
@@ -241,9 +241,9 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 15. Docker và chạy local
 
-- [ ] Kiểm tra `Dockerfile` có build được Java app hay vẫn đang phục vụ bản C#.
-- [ ] Cập nhật Dockerfile cho Java nếu mục tiêu là chạy Java app bằng container.
-- [ ] Kiểm tra `docker-compose.yml` có đúng service Java không.
+- [x] Kiểm tra `Dockerfile` build Java app.
+- [x] Cập nhật Dockerfile cho Java app.
+- [x] Kiểm tra `docker-compose.yml` có đúng service Java.
 - [ ] Build jar:
 
   ```bash
@@ -262,11 +262,11 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
   docker compose up --build
   ```
 
-## 16. Kiểm tra tương thích với bản C#
+## 16. Kiểm tra tương thích với API contract
 
 - [x] Đọc `docs/04-api.md` để lấy contract API hiện tại.
-- [x] So sánh route Java với route trong C# controllers.
-- [x] So sánh status code Java với middleware/exception C#.
+- [x] So sánh route Java với route trong API contract.
+- [x] So sánh status code Java với error behavior trong API contract.
 - [x] So sánh response của `GET /api/orders`.
 - [x] So sánh response của `GET /api/orders/{id}`.
 - [x] So sánh response của `POST /api/orders/{id}/checkout`.

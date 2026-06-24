@@ -61,7 +61,7 @@ public final class ManagementPlatformApplicationCheck {
             require(orders.statusCode() == 200, "GET /api/orders should return HTTP 200");
             require(orders.body().contains("\"page\":1"), "orders response should include parsed page");
             require(orders.body().contains("\"pageSize\":2"), "orders response should include parsed pageSize");
-            require(orders.body().contains("\"totalCount\":"), "orders response should include C#-compatible totalCount");
+            require(orders.body().contains("\"totalCount\":"), "orders response should include documented totalCount");
             require(orders.body().contains("\"tenantName\":\"Acme Corp\""), "orders response should include summary tenant name");
             require(!orders.body().contains("\"tenant\":"), "orders response should not include nested tenant details");
             require(orders.body().contains("Acme"), "orders response should apply name query");
