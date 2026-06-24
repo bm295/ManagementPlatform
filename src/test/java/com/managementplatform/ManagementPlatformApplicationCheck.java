@@ -61,6 +61,9 @@ public final class ManagementPlatformApplicationCheck {
             require(orders.statusCode() == 200, "GET /api/orders should return HTTP 200");
             require(orders.body().contains("\"page\":1"), "orders response should include parsed page");
             require(orders.body().contains("\"pageSize\":2"), "orders response should include parsed pageSize");
+            require(orders.body().contains("\"totalCount\":"), "orders response should include C#-compatible totalCount");
+            require(orders.body().contains("\"tenantName\":\"Acme Corp\""), "orders response should include summary tenant name");
+            require(!orders.body().contains("\"tenant\":"), "orders response should not include nested tenant details");
             require(orders.body().contains("Acme"), "orders response should apply name query");
 
             HttpResponse<String> order = client.send(
@@ -68,7 +71,7 @@ public final class ManagementPlatformApplicationCheck {
                 HttpResponse.BodyHandlers.ofString()
             );
             require(order.statusCode() == 200, "GET /api/orders/{id} should return HTTP 200");
-            require(order.body().equals("{\"id\":1,\"tenantId\":1,\"tenant\":{\"id\":1,\"name\":\"Acme Corp\",\"email\":\"ops@acme.example\"},\"name\":\"Acme onboarding package\",\"amount\":199.00,\"currency\":\"USD\",\"status\":\"Draft\",\"createdAt\":\"2026-04-28T08:02:00Z\",\"paidAt\":null}"),
+            require(order.body().equals("{\"id\":1,\"name\":\"Acme onboarding package\",\"tenantName\":\"Acme Corp\",\"tenantEmail\":\"ops@acme.example\",\"amount\":199.00,\"currency\":\"USD\",\"status\":\"Draft\",\"createdAt\":\"2026-04-28T08:02:00Z\",\"paidAt\":null}"),
                 "order detail response should match the JSON snapshot");
 
             HttpResponse<String> checkout = client.send(
@@ -91,6 +94,12 @@ public final class ManagementPlatformApplicationCheck {
             require(checkoutStatus.statusCode() == 200, "GET /api/checkouts/{id} should return HTTP 200");
             require(checkoutStatus.body().contains("\"checkoutId\":1"), "checkout status response should include checkout id");
 
+            HttpResponse<String> missingCheckout = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/checkouts/9999")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(missingCheckout.statusCode() == 404, "missing checkout resources should map to HTTP 404");
+
             HttpResponse<String> failedCheckout = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/2/checkout"))
                     .header("Content-Type", "application/json")
@@ -106,6 +115,10 @@ public final class ManagementPlatformApplicationCheck {
             );
             require(deadLetters.statusCode() == 200, "GET /api/dead-letters should return HTTP 200");
             require(deadLetters.body().contains("\"type\":\"PaymentCharge\""), "dead letters response should include payment charge failure");
+            require(!deadLetters.body().contains("\"payload\""),
+                "dead letters response should match the documented API fields");
+            require(deadLetters.body().contains("\"failureReason\":\"Payment failed in the mock gateway.\""),
+                "dead letters response should include the failure reason");
 
             HttpResponse<String> badRequest = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=abc")).GET().build(),

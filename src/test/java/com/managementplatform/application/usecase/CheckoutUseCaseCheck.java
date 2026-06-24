@@ -41,7 +41,9 @@ public final class CheckoutUseCaseCheck {
         throwsNotFoundWhenOrderDoesNotExist();
         throwsConflictWhenOrderIsNotDraft();
         marksOrderProcessingBeforePaymentChargeStep();
+        recordsDeclinedPaymentFailure();
         recordsPaymentFailureAndDeadLetter();
+        retryTokenSucceedsAndRecordsMultipleAttempts();
         recordsPaymentSuccessOrderAndPendingOutbox();
     }
 
@@ -133,6 +135,22 @@ public final class CheckoutUseCaseCheck {
         require(paymentGateway.observedProcessingState, "order should be CHECKOUT_PROCESSING when the payment gateway is called");
     }
 
+    private static void recordsDeclinedPaymentFailure() {
+        Order order = order();
+        InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
+        CheckoutUseCase useCase = useCaseWith(order, checkoutRepository, new InMemoryDeadLetterRepository(), new MockPaymentGateway());
+
+        CheckoutResponse response = useCase.checkout(ORDER_ID, new CheckoutRequest("declined-key", "tok_decline"));
+        CheckoutAttempt attempt = checkoutRepository.findById(response.checkoutId()).orElseThrow();
+
+        require(response.status() == CheckoutStatus.PAYMENT_FAILED, "declined payment should return failed checkout response");
+        require(response.paymentStatus() == PaymentStatus.FAILED, "declined payment should return failed payment status");
+        require(response.failureReason().contains("declined"), "declined payment should include decline reason");
+        require(attempt.outboxMessages().getFirst().lastError().equals(response.failureReason()),
+            "declined payment outbox should store the decline reason");
+        require(order.status() == OrderStatus.DRAFT, "declined payment should roll order back to DRAFT");
+    }
+
     private static void recordsPaymentFailureAndDeadLetter() {
         Order order = order();
         InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
@@ -151,9 +169,35 @@ public final class CheckoutUseCaseCheck {
         require(attempt.outboxMessages().size() == 1, "failed payment should create one failed outbox message");
         require(attempt.outboxMessages().getFirst().type() == OutboxMessageType.PAYMENT_CHARGE, "failed outbox should represent payment charge");
         require(attempt.outboxMessages().getFirst().status() == OutboxStatus.FAILED, "failed outbox should be marked failed");
+        require(attempt.outboxMessages().getFirst().lastError().equals(response.failureReason()),
+            "failed outbox should store the payment failure reason");
+        require(attempt.outboxMessages().getFirst().payloadJson().contains("\"order\":{\"id\":99"),
+            "failed outbox payload should include order debug information");
+        require(attempt.outboxMessages().getFirst().payloadJson().contains("\"checkout\":{\"id\":"),
+            "failed outbox payload should include checkout debug information");
+        require(attempt.outboxMessages().getFirst().payloadJson().contains("\"payment\":{\"status\":\"Failed\""),
+            "failed outbox payload should include payment debug information");
         require(deadLetterRepository.findRecent().size() == 1, "failed payment should create a dead-letter message");
+        require(deadLetterRepository.findRecent().getFirst().failureReason().equals(response.failureReason()),
+            "dead-letter should store the payment failure reason");
+        require(deadLetterRepository.findRecent().getFirst().payloadJson().equals(attempt.outboxMessages().getFirst().payloadJson()),
+            "dead-letter should store the full failed checkout payload for debugging");
         require(response.integrations().size() == 1, "failed response should include failed integration status");
         require(response.integrations().getFirst().status() == OutboxStatus.FAILED, "failed response integration should be failed");
+    }
+
+    private static void retryTokenSucceedsAndRecordsMultipleAttempts() {
+        Order order = order();
+        InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
+        CheckoutUseCase useCase = useCaseWith(order, checkoutRepository, new InMemoryDeadLetterRepository(), new MockPaymentGateway());
+
+        CheckoutResponse response = useCase.checkout(ORDER_ID, new CheckoutRequest("retry-key", "tok_retry"));
+        CheckoutAttempt attempt = checkoutRepository.findById(response.checkoutId()).orElseThrow();
+
+        require(response.status() == CheckoutStatus.PAYMENT_SUCCEEDED, "retry token should eventually return succeeded checkout response");
+        require(response.paymentStatus() == PaymentStatus.SUCCEEDED, "retry token should eventually return succeeded payment status");
+        require(attempt.paymentTransaction().attemptCount() > 1, "retry token should record multiple payment attempts");
+        require(order.status() == OrderStatus.PAID, "successful retry payment should mark order PAID");
     }
 
     private static void recordsPaymentSuccessOrderAndPendingOutbox() {

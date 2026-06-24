@@ -209,11 +209,11 @@ public final class ManagementPlatformApplication {
             if (index > 0) {
                 json.append(',');
             }
-            json.append(orderJson(orders.get(index)));
+            json.append(orderSummaryJson(orders.get(index)));
         }
-        json.append("],\"total\":").append(total)
-            .append(",\"page\":").append(page)
+        json.append("],\"page\":").append(page)
             .append(",\"pageSize\":").append(pageSize)
+            .append(",\"totalCount\":").append(total)
             .append('}');
         sendJson(exchange, 200, json.toString());
     }
@@ -221,7 +221,7 @@ public final class ManagementPlatformApplication {
     private static void handleGetOrder(HttpExchange exchange, InMemoryOrderRepository orderRepository, long orderId) throws IOException {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order %d was not found.".formatted(orderId)));
-        sendJson(exchange, 200, orderJson(order));
+        sendJson(exchange, 200, orderDetailsJson(order));
     }
 
     private static void handleCheckout(HttpExchange exchange, CheckoutUseCase checkoutUseCase, long orderId) throws IOException {
@@ -373,14 +373,24 @@ public final class ManagementPlatformApplication {
         return "GET, POST";
     }
 
-    private static String orderJson(Order order) {
-        return "{\"id\":%d,\"tenantId\":%d,\"tenant\":{\"id\":%d,\"name\":\"%s\",\"email\":\"%s\"},\"name\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s}".formatted(
+    private static String orderSummaryJson(Order order) {
+        return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\"}".formatted(
             order.id(),
-            order.tenantId(),
-            order.tenant().id(),
+            escapeJson(order.name()),
+            escapeJson(order.tenant().name()),
+            decimalJson(order.amount()),
+            escapeJson(order.currency()),
+            order.status().apiName(),
+            order.createdAt()
+        );
+    }
+
+    private static String orderDetailsJson(Order order) {
+        return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s}".formatted(
+            order.id(),
+            escapeJson(order.name()),
             escapeJson(order.tenant().name()),
             escapeJson(order.tenant().email()),
-            escapeJson(order.name()),
             decimalJson(order.amount()),
             escapeJson(order.currency()),
             order.status().apiName(),
