@@ -152,7 +152,7 @@ public final class CheckoutUseCase {
             attempt.id(),
             OutboxMessageType.PAYMENT_CHARGE,
             OutboxStatus.FAILED,
-            paymentFailurePayload(order, attempt),
+            paymentFailurePayload(order, attempt, paymentResult),
             paymentResult.attemptCount(),
             failureReason,
             now(),
@@ -179,20 +179,46 @@ public final class CheckoutUseCase {
         return "{\"orderId\":%d,\"checkoutAttemptId\":%d,\"orderName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\"}".formatted(
             order.id(),
             attempt.id(),
-            order.name(),
-            order.tenant().email(),
+            escapeJson(order.name()),
+            escapeJson(order.tenant().email()),
             order.amount(),
-            order.currency()
+            escapeJson(order.currency())
         );
     }
 
-    private String paymentFailurePayload(Order order, CheckoutAttempt attempt) {
-        return "{\"orderId\":%d,\"checkoutAttemptId\":%d,\"amount\":%s,\"currency\":\"%s\"}".formatted(
+    private String paymentFailurePayload(Order order, CheckoutAttempt attempt, PaymentGatewayResult paymentResult) {
+        return "{\"order\":{\"id\":%d,\"tenantId\":%d,\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"name\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\"},\"checkout\":{\"id\":%d,\"idempotencyKey\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"completedAt\":%s},\"payment\":{\"status\":\"%s\",\"attemptCount\":%d,\"providerTransactionId\":%s,\"failureReason\":%s}}".formatted(
             order.id(),
-            attempt.id(),
+            order.tenantId(),
+            escapeJson(order.tenant().name()),
+            escapeJson(order.tenant().email()),
+            escapeJson(order.name()),
             order.amount(),
-            order.currency()
+            escapeJson(order.currency()),
+            order.status().apiName(),
+            order.createdAt(),
+            attempt.id(),
+            escapeJson(attempt.idempotencyKey()),
+            attempt.status().apiName(),
+            attempt.createdAt(),
+            nullableInstantJson(attempt.completedAt()),
+            paymentResult.status().apiName(),
+            paymentResult.attemptCount(),
+            nullableStringJson(paymentResult.providerTransactionId()),
+            nullableStringJson(paymentResult.failureReason())
         );
+    }
+
+    private static String nullableInstantJson(Instant value) {
+        return value == null ? "null" : "\"" + value + "\"";
+    }
+
+    private static String nullableStringJson(String value) {
+        return value == null ? "null" : "\"" + escapeJson(value) + "\"";
+    }
+
+    private static String escapeJson(String value) {
+        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private long nextCheckoutId() {

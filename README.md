@@ -11,13 +11,20 @@ It uses:
 - idempotent checkout handling
 - outbox-style integration records and dead-letter reporting
 
-## Run Locally
+## Run the Java app locally
 
-Build and run the app with Maven and Java:
+This repo includes a Java 21 demo API under `src/main/java/com/managementplatform`.
+Build and run it with Maven and Java:
 
 ```bash
 mvn package
 java -jar target/management-platform-0.1.0.jar
+```
+
+The app listens on port `8080` by default. To choose another port, set `PORT` before starting the jar:
+
+```bash
+PORT=9090 java -jar target/management-platform-0.1.0.jar
 ```
 
 Open the API at:
@@ -57,7 +64,7 @@ Checkout an order:
 ```bash
 curl -X POST "http://localhost:8080/api/orders/1/checkout" \
   -H "Content-Type: application/json" \
-  -d '{"idempotencyKey":"demo-1","paymentMethodToken":"success"}'
+  -d '{"idempotencyKey":"demo-1","paymentMethodToken":"tok_success"}'
 ```
 
 Use a token containing `decline` or `fail` to simulate terminal payment failure. Use a token containing `retry` to simulate a successful retry.
@@ -83,7 +90,7 @@ mvn test
 ## Project Layout
 
 ```text
-src/main/java/com/example/managementplatform     Java HTTP API application
+src/main/java/com/managementplatform             Java HTTP API application
 Dockerfile                                       Java runtime image
 docker-compose.yml                               API service definition
 ```

@@ -212,27 +212,27 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 ## 13. Dead letters và outbox
 
 - [x] Quyết định Java dùng model `DeadLetterMessage` riêng hay derive từ failed outbox.
-- [ ] Tạo message khi checkout thất bại.
-- [ ] Lưu reason của failure.
-- [ ] Lưu payload đủ thông tin order/checkout để debug.
-- [ ] Implement list dead letters.
-- [ ] Đảm bảo `GET /api/dead-letters` trả dữ liệu tương thích docs API.
+- [x] Tạo message khi checkout thất bại.
+- [x] Lưu reason của failure.
+- [x] Lưu payload đủ thông tin order/checkout để debug.
+- [x] Implement list dead letters.
+- [x] Đảm bảo `GET /api/dead-letters` trả dữ liệu tương thích docs API.
 - [x] Với checkout thành công, tạo outbox message status `PENDING`.
 
 ## 14. Test cần có
 
-- [ ] Tạo Java test project dưới `src/test/java`.
-- [ ] Thêm dependency test nếu cần.
+- [x] Tạo Java test project dưới `src/test/java`.
+- [x] Thêm dependency test nếu cần.
 - [x] Test checkout success.
-- [ ] Test checkout failure với token chứa `decline`.
-- [ ] Test checkout failure với token chứa `fail`.
-- [ ] Test checkout retry token trả thành công và attempt count > 1.
-- [ ] Test idempotent checkout không double charge.
-- [ ] Test checkout order đã paid trả conflict.
-- [ ] Test search orders có phân trang.
-- [ ] Test get order not found.
-- [ ] Test get checkout not found.
-- [ ] Test dead-letter listing sau payment failed.
+- [x] Test checkout failure với token chứa `decline`.
+- [x] Test checkout failure với token chứa `fail`.
+- [x] Test checkout retry token trả thành công và attempt count > 1.
+- [x] Test idempotent checkout không double charge.
+- [x] Test checkout order đã paid trả conflict.
+- [x] Test search orders có phân trang.
+- [x] Test get order not found.
+- [x] Test get checkout not found.
+- [x] Test dead-letter listing sau payment failed.
 - [ ] Chạy toàn bộ test:
 
   ```bash
@@ -264,25 +264,25 @@ Tài liệu này là checklist nhỏ và rõ để tiếp tục rewrite Manageme
 
 ## 16. Kiểm tra tương thích với bản C#
 
-- [ ] Đọc `docs/04-api.md` để lấy contract API hiện tại.
-- [ ] So sánh route Java với route trong C# controllers.
-- [ ] So sánh status code Java với middleware/exception C#.
-- [ ] So sánh response của `GET /api/orders`.
-- [ ] So sánh response của `GET /api/orders/{id}`.
-- [ ] So sánh response của `POST /api/orders/{id}/checkout`.
-- [ ] So sánh response của `GET /api/checkouts/{id}`.
-- [ ] So sánh response của `GET /api/dead-letters`.
-- [ ] Ghi lại khác biệt cố ý nếu có.
+- [x] Đọc `docs/04-api.md` để lấy contract API hiện tại.
+- [x] So sánh route Java với route trong C# controllers.
+- [x] So sánh status code Java với middleware/exception C#.
+- [x] So sánh response của `GET /api/orders`.
+- [x] So sánh response của `GET /api/orders/{id}`.
+- [x] So sánh response của `POST /api/orders/{id}/checkout`.
+- [x] So sánh response của `GET /api/checkouts/{id}`.
+- [x] So sánh response của `GET /api/dead-letters`.
+- [x] Ghi lại khác biệt cố ý nếu có.
 
 ## 17. Dọn dẹp trước khi xem là hoàn thành
 
-- [ ] Chạy format hoặc tự kiểm tra style Java.
-- [ ] Xóa code dead hoặc helper không dùng.
-- [ ] Đảm bảo README hoặc docs chỉ rõ cách chạy bản Java.
+- [x] Chạy format hoặc tự kiểm tra style Java.
+- [x] Xóa code dead hoặc helper không dùng.
+- [x] Đảm bảo README hoặc docs chỉ rõ cách chạy bản Java.
 - [ ] Đảm bảo `mvn test` pass.
 - [ ] Đảm bảo `mvn package` tạo được jar chạy được.
 - [ ] Chạy thử các endpoint chính bằng curl hoặc HTTP client.
-- [ ] Cập nhật checklist này: task nào đã làm thì đổi sang `[x]`.
+- [x] Cập nhật checklist này: task nào đã làm thì đổi sang `[x]`.
 
 ## 18. Việc có thể làm sau khi Java demo hoàn chỉnh
 
