@@ -2,7 +2,7 @@
 
 This document describes how status values move for each object in this demo.
 
-All status enums are defined in `src/ManagementPlatform.Domain/Enums.cs` and are persisted as numeric values (`tinyint`) in SQL Server.
+All status enums are defined under `src/main/java/com/managementplatform/domain/enums` and are serialized through their API names.
 
 ## 1) Order (`OrderStatus`)
 
@@ -81,26 +81,19 @@ Values:
 Transitions used by the code:
 
 - (new message) `Pending`
-- `Pending -> Processing`
-  - when worker picks the message.
-- `Processing -> Succeeded`
-  - when integration dispatch succeeds.
-- `Processing -> Pending`
-  - when dispatch fails but retry limit is not reached.
-- `Processing -> Failed`
-  - when dispatch fails and retry limit is reached.
+- successful checkout creates a `Pending` checkout-email message.
+- terminal payment failure creates a `Failed` payment-charge message and a dead-letter record.
 
 Retry details:
 
-- retry count is tracked by `AttemptCount`.
-- `NextAttemptAt` uses exponential backoff up to 60 seconds.
-- when max attempts is reached, a dead-letter record is created.
+- retry count is tracked by `AttemptCount` on payment and outbox-style records.
+- the current Java demo does not run a background outbox dispatcher.
 
 ## 6) DeadLetterMessage
 
 `DeadLetterMessage` has no status enum.
 
-A row is created only when an outbox message reaches max attempts and is marked `OutboxStatus.Failed`.
+A record is created when terminal payment failure creates a failed payment-charge outbox-style message.
 
 It stores:
 
@@ -112,6 +105,5 @@ It stores:
 
 ## Status transition source locations
 
-- Enums: `src/ManagementPlatform.Domain/Enums.cs`
-- Checkout state changes: `src/ManagementPlatform.Application/UseCases/Checkouts/CheckoutService.cs`
-- Outbox and invoice state changes: `src/ManagementPlatform.Infrastructure/Outbox/OutboxDispatcher.cs`
+- Enums: `src/main/java/com/managementplatform/domain/enums`
+- Checkout state changes: `src/main/java/com/managementplatform/application/usecase/CheckoutUseCase.java`

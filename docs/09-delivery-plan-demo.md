@@ -6,7 +6,7 @@ This plan is for the current demo scope only. The target is 4 days, or 32 hours 
 
 - Create the solution and project structure.
 - Add the main domain model with tenants, orders, checkouts, payments, invoices, outbox messages, and dead letters.
-- Set up SQL Server with EF Core migrations.
+- Set up in-memory repositories with in-memory demo storage.
 - Add seed data for demo tenants and orders.
 
 ## Day 2 - 8 hours
@@ -26,7 +26,7 @@ This plan is for the current demo scope only. The target is 4 days, or 32 hours 
 ## Day 4 - 8 hours
 
 - Add tests for the main API and service flows.
-- Add Docker support for the API and SQL Server.
+- Add Docker support for the API and in-memory repositories.
 - Write the README and the design docs.
 - Run the demo from a clean start and fix the issues that block the walkthrough.
 

@@ -5,10 +5,10 @@ See [05-flow-sequence.png](</abs/path/d:/Code/ManagementPlatform/docs/05-flow-se
 Use this flow for one end-to-end diagram:
 
 1. Browser demo searches orders through the API.
-2. API reads matching orders from SQL Server and returns the paged result.
+2. API reads matching orders from in-memory repositories and returns the paged result.
 3. User selects one order.
 4. Browser demo requests order details through the API.
-5. API reads the order and tenant data from SQL Server and returns the order details.
+5. API reads the order and tenant data from in-memory repositories and returns the order details.
 6. User submits checkout with `idempotencyKey` and `paymentMethodToken`.
 7. API loads the order for checkout and checks whether the order is still in `Draft`.
 8. API creates a `CheckoutAttempt` row and updates the order status to `CheckoutProcessing`.
@@ -33,11 +33,11 @@ If payment succeeds:
    one for production push
 6. API returns the successful checkout response.
 7. Browser demo can request checkout status through `GET /api/checkouts/{checkoutId}`.
-8. API reads the checkout result and outbox status from SQL Server and returns it.
+8. API reads the checkout result and outbox status from in-memory repositories and returns it.
 
 Background worker flow after successful payment:
 
-1. Outbox worker polls SQL Server for pending `OutboxMessages`.
+1. Outbox worker polls in-memory repositories for pending `OutboxMessages`.
 2. Worker processes the email message by calling the mock email service.
 3. Worker processes the production message by calling the mock production service.
 4. Worker updates the existing `Invoices` row based on production processing result:
