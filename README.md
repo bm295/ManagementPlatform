@@ -27,10 +27,16 @@ The app listens on port `8080` by default. To choose another port, set `PORT` be
 PORT=9090 java -jar target/management-platform-0.1.0.jar
 ```
 
-Open the API at:
+Open the landing page at:
 
 ```text
-http://localhost:8080
+http://localhost:8080/
+```
+
+Or go directly to the health check:
+
+```text
+http://localhost:8080/health
 ```
 
 Or run with Docker Compose:

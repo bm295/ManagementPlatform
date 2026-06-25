@@ -1,5 +1,6 @@
 package com.managementplatform;
 
+import com.managementplatform.bootstrap.ManagementPlatformBootstrap;
 import com.managementplatform.application.dto.CheckoutRequest;
 import com.sun.net.httpserver.HttpServer;
 import java.net.URI;
@@ -48,11 +49,20 @@ public final class ManagementPlatformApplicationCheck {
     }
 
     private static void servesOrderRoutesAndCheckout() throws Exception {
-        HttpServer server = ManagementPlatformApplication.createServer(0);
+        HttpServer server = ManagementPlatformBootstrap.createServer(0);
         server.start();
         try {
             HttpClient client = HttpClient.newHttpClient();
             String baseUrl = "http://localhost:%d".formatted(server.getAddress().getPort());
+
+            HttpResponse<String> root = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(root.statusCode() == 200, "GET / should return the landing page");
+            require(root.headers().firstValue("Content-Type").orElse("").startsWith("text/html"),
+                "landing page should use HTML content type");
+            require(root.body().contains("Management Platform API"), "landing page should describe the service");
 
             HttpResponse<String> orders = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=1&pageSize=2&name=Acme")).GET().build(),

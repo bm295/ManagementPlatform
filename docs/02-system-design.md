@@ -8,15 +8,7 @@ The demo uses the JDK HTTP server and in-memory repositories seeded at startup. 
 
 ## Architecture
 
-```mermaid
-flowchart LR
-    Client[HTTP client] --> Api[Java HTTP server]
-    Api --> UseCase[Checkout use case]
-    UseCase --> Orders[In-memory order repository]
-    UseCase --> Checkouts[In-memory checkout repository]
-    UseCase --> DeadLetters[In-memory dead-letter repository]
-    UseCase --> Payment[Mock payment gateway]
-```
+The architecture diagram is documented in [01-architecture-diagram.md](01-architecture-diagram.md).
 
 ## Application Structure
 

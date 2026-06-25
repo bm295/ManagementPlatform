@@ -11,3 +11,4 @@ artifacts/
 coverage/
 .idea/
 target/
+target/management-platform-0.1.0.jar
