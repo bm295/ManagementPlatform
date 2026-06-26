@@ -1,56 +1,56 @@
-# User Story: Retry Failed Checkout Integrations
+# User Story: Recover Failed Checkout Follow-Up Actions
 
 ## Story
 
-As an operations user, I want to view failed checkout integrations and retry a selected integration message, so that I can recover from transient downstream outages without asking a customer to place the order again.
+As a commerce operations manager, I want the business to quickly identify and recover checkout follow-up actions that did not complete, so that customers receive the expected order confirmations and services without needing to place duplicate orders or contact support.
 
 ## Background
 
-The platform currently exposes checkout status and dead-letter messages. Those views help an operator identify that an integration failed, but they do not describe an operator workflow for recovery. A retry story gives the product a clear path for handling failures such as a temporary email provider outage while preserving checkout state and idempotency.
+When checkout follow-up actions fail, customers may experience missing confirmations, delayed fulfillment, or incomplete post-purchase services even though payment and order capture were successful. Operations teams need a controlled recovery workflow that lets the business resolve temporary partner or service disruptions while protecting customers from duplicate communications, duplicate fulfillment, or repeated charges.
 
 ## Acceptance Criteria
 
-### Scenario: View retryable integration failures
+### Scenario: Review checkout follow-up actions that need attention
 
-Given at least one checkout integration has failed with a retryable error,
-when the operations user requests the retryable integrations list,
-then the response includes the failed integration message,
-and the response includes the checkout attempt ID, integration type, current status, attempt count, last error, and failure timestamp.
+Given one or more checkout follow-up actions did not complete and can still be recovered,
+when an operations user reviews items needing attention,
+then the user can see each affected checkout,
+and the user can understand what follow-up action failed, its current business status, how many recovery attempts have been made, the most recent failure reason, and when the issue last occurred.
 
-### Scenario: Retry one failed integration
+### Scenario: Recover one failed checkout follow-up action
 
-Given a retryable checkout integration exists,
-when the operations user retries that integration with a new idempotency key,
-then the platform executes only that integration message,
-and the response includes the updated status, attempt count, and last error.
+Given a checkout follow-up action is eligible for recovery,
+when an operations user starts recovery for that specific action,
+then only the selected follow-up action is attempted again,
+and the user receives the latest recovery status, attempt count, and any remaining failure reason.
 
-### Scenario: Successful retry clears the operational failure
+### Scenario: Successful recovery removes the item from the work queue
 
-Given a failed integration is retried successfully,
-when the operations user views retryable integrations again,
-then that integration no longer appears in the retryable list,
-and the related checkout status shows the integration as completed.
+Given a failed checkout follow-up action is recovered successfully,
+when the operations user reviews items needing attention again,
+then the recovered item no longer appears in the work queue,
+and the related checkout shows that the follow-up action is complete.
 
-### Scenario: Idempotent retry request is replayed
+### Scenario: Duplicate recovery request does not duplicate customer impact
 
-Given an operations user already retried an integration with an idempotency key,
-when the same retry request is submitted again with the same key and target integration,
-then the platform returns the original retry result,
-and the integration side effect is not executed a second time.
+Given an operations user already requested recovery for a checkout follow-up action,
+when the same recovery request is submitted again,
+then the user receives the original recovery result,
+and the customer or downstream partner does not receive the same follow-up action twice.
 
-### Scenario: Idempotency conflict is rejected
+### Scenario: Recovery request for a different item is treated separately
 
-Given an idempotency key was used for one integration retry,
-when the operations user submits the same key for a different integration retry,
-then the platform rejects the request with a conflict response,
-and no integration side effect is executed.
+Given a recovery request has already been recorded for one checkout follow-up action,
+when an operations user attempts to reuse that same recovery request for a different follow-up action,
+then the platform rejects the request as a conflict,
+and no customer or downstream partner action is performed.
 
-### Scenario: Completed integrations cannot be retried
+### Scenario: Completed follow-up actions cannot be recovered again
 
-Given an integration message is already completed,
-when the operations user attempts to retry it,
+Given a checkout follow-up action is already complete,
+when an operations user attempts to recover it again,
 then the platform rejects the request as invalid,
-and the completed integration is not executed again.
+and the customer or downstream partner does not receive a duplicate follow-up action.
 
 ## Notes for Implementation
 
@@ -75,7 +75,7 @@ Content-Type: application/json
 
 ## Definition of Done
 
-- The retryable integrations list is covered by automated checks.
+- The recovery work queue is covered by automated checks.
 - The retry endpoint is covered for success, missing integration, invalid completed integration, idempotent replay, and idempotency conflict.
 - Existing checkout and order checks continue to pass.
-- API documentation includes the retry workflow and example responses.
+- API documentation includes the recovery workflow and example responses.
