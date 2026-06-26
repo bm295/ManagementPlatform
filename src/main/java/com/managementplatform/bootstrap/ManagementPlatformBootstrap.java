@@ -1,5 +1,8 @@
 package com.managementplatform.bootstrap;
 
+import com.managementplatform.application.port.CheckoutRepository;
+import com.managementplatform.application.port.DeadLetterRepository;
+import com.managementplatform.application.port.OrderRepository;
 import com.managementplatform.application.port.TimeProvider;
 import com.managementplatform.application.usecase.CheckoutUseCase;
 import com.managementplatform.infrastructure.gateway.MockPaymentGateway;
@@ -26,9 +29,9 @@ public final class ManagementPlatformBootstrap {
     }
 
     public static HttpServer createServer(int port) throws IOException {
-        InMemoryOrderRepository orderRepository = new InMemoryOrderRepository();
-        InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
-        InMemoryDeadLetterRepository deadLetterRepository = new InMemoryDeadLetterRepository();
+        OrderRepository orderRepository = new InMemoryOrderRepository();
+        CheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
+        DeadLetterRepository deadLetterRepository = new InMemoryDeadLetterRepository();
         TimeProvider timeProvider = Instant::now;
         CheckoutUseCase checkoutUseCase = new CheckoutUseCase(
             orderRepository,

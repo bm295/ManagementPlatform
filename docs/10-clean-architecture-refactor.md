@@ -14,11 +14,11 @@ This checklist tracks the refactor needed to move `ManagementPlatformApplication
 - [x] Move `main(String[] args)` into a small launcher class.
 - [x] Move server creation and route registration out of `ManagementPlatformApplication.java`.
 - [x] Keep only wiring and startup code in the launcher layer.
-- [ ] Introduce a separate HTTP adapter class for route handlers.
-- [ ] Split root landing page handling from API route handling.
-- [ ] Keep `/health` and `/` responses in the HTTP adapter layer.
-- [ ] Keep `/api/orders`, `/api/checkouts`, and `/api/dead-letters` handlers isolated from startup code.
-- [ ] Ensure the use case layer is constructed through ports only.
+- [x] Introduce a separate HTTP adapter class for route handlers.
+- [x] Split root landing page handling from API route handling.
+- [x] Keep `/health` and `/` responses in the HTTP adapter layer.
+- [x] Keep `/api/orders`, `/api/checkouts`, and `/api/dead-letters` handlers isolated from startup code.
+- [x] Ensure the use case layer is constructed through ports only.
 - [ ] Avoid direct dependency from application/use case code to `HttpServer` or `HttpExchange`.
 - [ ] Update package names or module boundaries only if needed for the new structure.
 - [ ] Keep domain, application, and infrastructure packages unchanged unless the refactor requires a move.
