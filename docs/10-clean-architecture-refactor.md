@@ -13,7 +13,7 @@ This checklist tracks the refactor needed to move `ManagementPlatformApplication
 - [x] Create a dedicated bootstrap or composition-root package for app startup.
 - [x] Move `main(String[] args)` into a small launcher class.
 - [x] Move server creation and route registration out of `ManagementPlatformApplication.java`.
-- [ ] Keep only wiring and startup code in the launcher layer.
+- [x] Keep only wiring and startup code in the launcher layer.
 - [ ] Introduce a separate HTTP adapter class for route handlers.
 - [ ] Split root landing page handling from API route handling.
 - [ ] Keep `/health` and `/` responses in the HTTP adapter layer.

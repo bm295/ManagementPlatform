@@ -16,14 +16,16 @@ Current project structure:
 
 ```text
 src/main/java/com/managementplatform
-  ManagementPlatformApplication.java  HTTP entry point and route handlers
+  ManagementPlatformApplication.java  Backwards-compatible entry point
+  bootstrap                         Launcher and composition root
+  presentation/http                 HTTP adapter and route handlers
   domain                            Domain models and enums
   application                       Use cases, DTOs, and ports
   infrastructure                    In-memory repositories and mock gateway
   shared                            Shared exceptions
 ```
 
-The application layer depends on ports (`OrderRepository`, `CheckoutRepository`, `DeadLetterRepository`, `PaymentGateway`, and `TimeProvider`) rather than concrete infrastructure classes. The Java entry point wires those ports to in-memory adapters for the demo.
+The application layer depends on ports (`OrderRepository`, `CheckoutRepository`, `DeadLetterRepository`, `PaymentGateway`, and `TimeProvider`) rather than concrete infrastructure classes. The bootstrap layer wires those ports to in-memory adapters for the demo, while HTTP routing stays in the presentation adapter.
 
 ## Data Model
 

@@ -2,6 +2,7 @@ package com.managementplatform;
 
 import com.managementplatform.bootstrap.ManagementPlatformBootstrap;
 import com.managementplatform.application.dto.CheckoutRequest;
+import com.managementplatform.presentation.http.ManagementPlatformHttpAdapter;
 import com.sun.net.httpserver.HttpServer;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,16 +23,16 @@ public final class ManagementPlatformApplicationCheck {
     }
 
     private static void usesDefaultPortWhenEnvironmentIsMissing() {
-        require(ManagementPlatformApplication.portFromEnvironment(Map.of()) == ManagementPlatformApplication.DEFAULT_PORT,
+        require(ManagementPlatformBootstrap.portFromEnvironment(Map.of()) == ManagementPlatformBootstrap.DEFAULT_PORT,
             "missing PORT should use default port");
-        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", " ")) == ManagementPlatformApplication.DEFAULT_PORT,
+        require(ManagementPlatformBootstrap.portFromEnvironment(Map.of("PORT", " ")) == ManagementPlatformBootstrap.DEFAULT_PORT,
             "blank PORT should use default port");
     }
 
     private static void readsPortFromEnvironment() {
-        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", "9090")) == 9090,
+        require(ManagementPlatformBootstrap.portFromEnvironment(Map.of("PORT", "9090")) == 9090,
             "PORT environment value should be used");
-        require(ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", " 7070 ")) == 7070,
+        require(ManagementPlatformBootstrap.portFromEnvironment(Map.of("PORT", " 7070 ")) == 7070,
             "PORT environment value should be trimmed");
     }
 
@@ -42,7 +43,7 @@ public final class ManagementPlatformApplicationCheck {
     }
 
     private static void parsesCheckoutJsonBody() {
-        CheckoutRequest request = ManagementPlatformApplication.checkoutRequestFromJson("{\"idempotencyKey\":\"idem-1\",\"paymentMethodToken\":\"tok_success\"}");
+        CheckoutRequest request = ManagementPlatformHttpAdapter.checkoutRequestFromJson("{\"idempotencyKey\":\"idem-1\",\"paymentMethodToken\":\"tok_success\"}");
 
         require(request.idempotencyKey().equals("idem-1"), "JSON parser should read idempotencyKey");
         require(request.paymentMethodToken().equals("tok_success"), "JSON parser should read paymentMethodToken");
@@ -159,7 +160,7 @@ public final class ManagementPlatformApplicationCheck {
 
     private static void expectInvalidPort(String value) {
         try {
-            ManagementPlatformApplication.portFromEnvironment(Map.of("PORT", value));
+            ManagementPlatformBootstrap.portFromEnvironment(Map.of("PORT", value));
             throw new AssertionError("invalid PORT should throw IllegalArgumentException");
         } catch (IllegalArgumentException exception) {
             require(exception.getMessage().startsWith("PORT must"), "invalid PORT message should mention PORT");

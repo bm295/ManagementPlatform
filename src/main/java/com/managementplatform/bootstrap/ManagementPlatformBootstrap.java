@@ -7,8 +7,8 @@ import com.managementplatform.infrastructure.repository.InMemoryCheckoutReposito
 import com.managementplatform.infrastructure.repository.InMemoryDeadLetterRepository;
 import com.managementplatform.infrastructure.repository.InMemoryOrderRepository;
 import com.managementplatform.presentation.http.ManagementPlatformHttpAdapter;
-import java.io.IOException;
 import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
 import java.time.Instant;
 import java.util.Map;
 
