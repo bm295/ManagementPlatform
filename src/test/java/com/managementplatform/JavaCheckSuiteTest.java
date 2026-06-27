@@ -28,6 +28,11 @@ final class JavaCheckSuiteTest {
     }
 
     @Test
+    void applicationLayerStaysIndependentFromJdkHttpServerTypes() throws Exception {
+        ArchitectureBoundaryCheck.main(new String[0]);
+    }
+
+    @Test
     void httpApplicationCoversRoutesAndDeadLetterListing() throws Exception {
         ManagementPlatformApplicationCheck.main(new String[0]);
     }

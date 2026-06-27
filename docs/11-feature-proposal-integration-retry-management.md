@@ -60,6 +60,28 @@ and the customer or downstream partner does not receive a duplicate follow-up ac
 - Keep bootstrap limited to wiring the new use case and adapter dependencies.
 - Preserve existing checkout idempotency behavior; retry idempotency should apply only to retry commands.
 
+## Implementation To-Do List
+
+- [ ] Create `com.managementplatform.application.dto.RetryIntegrationRequest` with an `idempotencyKey` field for retry commands.
+- [ ] Create `com.managementplatform.application.dto.RetryIntegrationResponse` with `outboxMessageId`, `checkoutAttemptId`, `type`, `status`, `attemptCount`, and `failureReason` fields.
+- [ ] Create `com.managementplatform.application.dto.RetryableIntegrationItemDto` to represent one item in the operations recovery queue.
+- [ ] Create `com.managementplatform.application.dto.RetryableIntegrationPageResponse` with `items`, `page`, `pageSize`, and `totalCount` fields.
+- [ ] Create `com.managementplatform.application.port.IntegrationRetryRepository` for finding retryable outbox messages, saving retry state, and storing retry idempotency records.
+- [ ] Create `com.managementplatform.application.port.IntegrationRetryExecutor` for executing the selected follow-up action without exposing HTTP or infrastructure details to the use case.
+- [ ] Create `com.managementplatform.application.usecase.ListRetryableIntegrationsUseCase` to validate pagination and return the recovery work queue.
+- [ ] Create `com.managementplatform.application.usecase.RetryIntegrationUseCase` to validate retry eligibility, enforce retry idempotency, detect idempotency conflicts, execute one selected follow-up action, and return the latest retry result.
+- [ ] Create or extend domain state needed to track retry idempotency keys separately from checkout idempotency keys.
+- [ ] Add an in-memory implementation of `IntegrationRetryRepository` under `com.managementplatform.infrastructure.repository` for the demo runtime and automated checks.
+- [ ] Add an infrastructure implementation of `IntegrationRetryExecutor` that can retry the supported follow-up action types, starting with checkout email delivery.
+- [ ] Add HTTP route handling for `GET /api/integrations/retryable` in the presentation adapter.
+- [ ] Add HTTP route handling for `POST /api/integrations/{outboxMessageId}/retry` in the presentation adapter.
+- [ ] Wire `ListRetryableIntegrationsUseCase`, `RetryIntegrationUseCase`, `IntegrationRetryRepository`, and `IntegrationRetryExecutor` in `ManagementPlatformBootstrap`.
+- [ ] Add `IntegrationRetryUseCaseCheck` covering successful retry, completed-action rejection, idempotent replay, and idempotency conflict.
+- [ ] Add `ManagementPlatformIntegrationRetryCheck` covering the retryable queue endpoint and retry endpoint HTTP status/response mapping.
+- [ ] Update `JavaCheckSuiteTest` to run the new retry use case and HTTP checks.
+- [ ] Update API documentation with retryable queue and retry command request/response examples.
+- [ ] Run `mvn test` and confirm existing checkout, order, and architecture checks still pass.
+
 ## Suggested API Shape
 
 ```http
