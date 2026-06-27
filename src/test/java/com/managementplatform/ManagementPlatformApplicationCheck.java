@@ -64,6 +64,9 @@ public final class ManagementPlatformApplicationCheck {
             require(root.headers().firstValue("Content-Type").orElse("").startsWith("text/html"),
                 "landing page should use HTML content type");
             require(root.body().contains("Management Platform API"), "landing page should describe the service");
+            require(root.body().contains("Search orders by name"), "landing page should include order search UI");
+            require(root.body().contains("Checkout"), "landing page should include checkout UI");
+            require(root.body().contains("Refresh dead letters"), "landing page should include dead-letter monitoring UI");
 
             HttpResponse<String> orders = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=1&pageSize=2&name=Acme")).GET().build(),
