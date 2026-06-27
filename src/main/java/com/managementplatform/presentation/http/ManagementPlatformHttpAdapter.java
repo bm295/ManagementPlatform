@@ -8,7 +8,9 @@ import com.managementplatform.application.usecase.CheckoutUseCase;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 
@@ -16,7 +18,7 @@ public final class ManagementPlatformHttpAdapter {
     private static final String HTML_CONTENT_TYPE = "text/html; charset=utf-8";
     private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
     private static final String PROBLEM_CONTENT_TYPE = "application/problem+json; charset=utf-8";
-    private static final byte[] LANDING_PAGE_BODY = "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Management Platform</title></head><body><main><h1>Management Platform API</h1><p>The service is running.</p></main></body></html>".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] LANDING_PAGE_BODY = landingPageHtml().getBytes(StandardCharsets.UTF_8);
 
     private final ManagementPlatformRouteHandlers routeHandlers;
 
@@ -68,6 +70,17 @@ public final class ManagementPlatformHttpAdapter {
         exchange.sendResponseHeaders(200, LANDING_PAGE_BODY.length);
         try (OutputStream responseBody = exchange.getResponseBody()) {
             responseBody.write(LANDING_PAGE_BODY);
+        }
+    }
+
+    private static String landingPageHtml() {
+        try (InputStream resource = ManagementPlatformHttpAdapter.class.getResourceAsStream("/static/index.html")) {
+            if (resource == null) {
+                throw new IllegalStateException("Static landing page resource was not found.");
+            }
+            return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException exception) {
+            throw new UncheckedIOException("Unable to load static landing page.", exception);
         }
     }
 

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Management Platform</title>
+    <style>
+        :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f3f6fb; color: #172033; }
+        header { background: linear-gradient(135deg, #172033, #2854d8); color: white; padding: 48px clamp(20px, 5vw, 72px); }
+        header p { max-width: 760px; color: #dbe6ff; font-size: 1.1rem; line-height: 1.6; }
+        main { display: grid; gap: 24px; padding: 28px clamp(16px, 4vw, 64px) 48px; }
+        .toolbar, .card { background: white; border: 1px solid #dfe7f5; border-radius: 18px; box-shadow: 0 18px 45px rgba(23, 32, 51, 0.08); }
+        .toolbar { display: grid; gap: 16px; grid-template-columns: minmax(220px, 1fr) auto auto; padding: 18px; align-items: end; }
+        label { display: grid; gap: 6px; color: #56647a; font-weight: 700; font-size: 0.88rem; }
+        input, select { width: 100%; border: 1px solid #c8d3e4; border-radius: 12px; padding: 12px 14px; font: inherit; }
+        button { border: 0; border-radius: 12px; background: #2854d8; color: white; cursor: pointer; font-weight: 800; padding: 13px 18px; }
+        button.secondary { background: #eef3ff; color: #2854d8; }
+        button:disabled { cursor: wait; opacity: 0.65; }
+        .grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr); gap: 24px; }
+        .card { padding: 22px; }
+        .orders { display: grid; gap: 12px; }
+        .order { border: 1px solid #e4ebf7; border-radius: 14px; padding: 16px; display: grid; gap: 8px; }
+        .order h3 { margin: 0; }
+        .meta { color: #66758d; display: flex; flex-wrap: wrap; gap: 10px; }
+        .status { background: #eef3ff; color: #2448b8; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; }
+        .detail { display: grid; gap: 14px; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; }
+        pre { background: #101827; color: #d8e7ff; border-radius: 14px; overflow: auto; padding: 16px; white-space: pre-wrap; }
+        .notice { border-radius: 12px; padding: 12px 14px; background: #fff8e8; color: #7a4e00; }
+        @media (max-width: 900px) { .toolbar, .grid, .actions { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Management Platform API</h1>
+        <p>Search demo orders, review tenant billing details, run checkout flows, inspect checkout status, and monitor dead-lettered integration messages from one browser interface.</p>
+    </header>
+    <main>
+        <section class="toolbar" aria-label="Order search">
+            <label>Search orders by name<input id="search" placeholder="Try Acme or Globex" autocomplete="off"></label>
+            <label>Page size<select id="pageSize"><option>3</option><option>5</option><option>10</option></select></label>
+            <button id="searchButton">Search orders</button>
+        </section>
+        <section class="grid">
+            <div class="card">
+                <h2>Orders</h2>
+                <div id="orders" class="orders" aria-live="polite"></div>
+            </div>
+            <aside class="card detail">
+                <h2>Selected order</h2>
+                <div id="selected" class="notice">Choose an order to see details and checkout actions.</div>
+                <div class="actions">
+                    <label>Idempotency key<input id="idempotencyKey" value="demo-ui-1"></label>
+                    <label>Payment token<input id="paymentToken" value="tok_success"></label>
+                    <button id="checkoutButton" disabled>Checkout</button>
+                </div>
+                <label>Lookup checkout by ID<input id="checkoutId" placeholder="1"></label>
+                <button class="secondary" id="lookupButton">Get checkout status</button>
+                <button class="secondary" id="deadLettersButton">Refresh dead letters</button>
+                <pre id="output">Ready.</pre>
+            </aside>
+        </section>
+    </main>
+    <script>
+        const state = { selectedOrderId: null };
+        const $ = (id) => document.getElementById(id);
+        const show = (value) => { $('output').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); };
+        async function api(path, options) {
+            const response = await fetch(path, options);
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : null;
+            if (!response.ok) throw data;
+            return data;
+        }
+        async function searchOrders() {
+            $('searchButton').disabled = true;
+            try {
+                const params = new URLSearchParams({ page: '1', pageSize: $('pageSize').value, name: $('search').value });
+                const data = await api('/api/orders?' + params);
+                $('orders').innerHTML = data.items.map(order => `
+                    <article class="order">
+                        <h3>${order.name}</h3>
+                        <div class="meta"><span>#${order.id}</span><span>${order.tenantName}</span><span>${order.currency} ${order.amount.toFixed(2)}</span><span class="status">${order.status}</span></div>
+                        <button class="secondary" data-order-id="${order.id}">View details</button>
+                    </article>`).join('') || '<p>No orders matched your search.</p>';
+                show(data);
+            } catch (error) { show(error); } finally { $('searchButton').disabled = false; }
+        }
+        async function selectOrder(orderId) {
+            const order = await api('/api/orders/' + orderId);
+            state.selectedOrderId = order.id;
+            $('checkoutButton').disabled = false;
+            $('selected').innerHTML = `<strong>${order.name}</strong><br>${order.tenantName} &lt;${order.tenantEmail}&gt;<br>${order.currency} ${order.amount.toFixed(2)} · ${order.status}`;
+            show(order);
+        }
+        async function checkout() {
+            const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
+            const data = await api('/api/orders/' + state.selectedOrderId + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+            $('checkoutId').value = data.checkoutId;
+            show(data);
+        }
+        $('orders').addEventListener('click', (event) => { if (event.target.dataset.orderId) selectOrder(event.target.dataset.orderId).catch(show); });
+        $('searchButton').addEventListener('click', searchOrders);
+        $('checkoutButton').addEventListener('click', () => checkout().catch(show));
+        $('lookupButton').addEventListener('click', () => api('/api/checkouts/' + $('checkoutId').value).then(show).catch(show));
+        $('deadLettersButton').addEventListener('click', () => api('/api/dead-letters').then(show).catch(show));
+        searchOrders();
+    </script>
+</body>
+</html>

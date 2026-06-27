@@ -27,11 +27,13 @@ The app listens on port `8080` by default. To choose another port, set `PORT` be
 PORT=9090 java -jar target/management-platform-0.1.0.jar
 ```
 
-Open the landing page at:
+Open the browser user interface at:
 
 ```text
 http://localhost:8080/
 ```
+
+The UI lets you search demo orders, view order details, submit checkouts, look up checkout status, and refresh dead-letter messages.
 
 Or go directly to the health check:
 
