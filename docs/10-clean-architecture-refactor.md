@@ -19,8 +19,8 @@ This checklist tracks the refactor needed to move `ManagementPlatformApplication
 - [x] Keep `/health` and `/` responses in the HTTP adapter layer.
 - [x] Keep `/api/orders`, `/api/checkouts`, and `/api/dead-letters` handlers isolated from startup code.
 - [x] Ensure the use case layer is constructed through ports only.
-- [ ] Avoid direct dependency from application/use case code to `HttpServer` or `HttpExchange`.
-- [ ] Update package names or module boundaries only if needed for the new structure.
+- [x] Avoid direct dependency from application/use case code to `HttpServer` or `HttpExchange`.
+- [x] Update package names or module boundaries only if needed for the new structure.
 - [ ] Keep domain, application, and infrastructure packages unchanged unless the refactor requires a move.
 - [ ] Update the manifest `mainClass` in `pom.xml` if the launcher class changes.
 - [ ] Update README run instructions if the startup entrypoint changes.
