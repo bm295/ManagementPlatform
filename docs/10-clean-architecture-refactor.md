@@ -21,10 +21,10 @@ This checklist tracks the refactor needed to move `ManagementPlatformApplication
 - [x] Ensure the use case layer is constructed through ports only.
 - [x] Avoid direct dependency from application/use case code to `HttpServer` or `HttpExchange`.
 - [x] Update package names or module boundaries only if needed for the new structure.
-- [ ] Keep domain, application, and infrastructure packages unchanged unless the refactor requires a move.
-- [ ] Update the manifest `mainClass` in `pom.xml` if the launcher class changes.
-- [ ] Update README run instructions if the startup entrypoint changes.
-- [ ] Add or update tests so the server still serves the same API routes after refactor.
+- [x] Keep domain, application, and infrastructure packages unchanged unless the refactor requires a move.
+- [x] Update the manifest `mainClass` in `pom.xml` if the launcher class changes.
+- [x] Update README run instructions if the startup entrypoint changes.
+- [x] Add or update tests so the server still serves the same API routes after refactor.
 - [ ] Run `mvn test` after each structural change set.
 
 ## Suggested End State
