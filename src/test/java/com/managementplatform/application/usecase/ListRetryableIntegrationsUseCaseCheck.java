@@ -5,6 +5,7 @@ import com.managementplatform.application.port.IntegrationRetryRepository;
 import com.managementplatform.domain.enums.OutboxMessageType;
 import com.managementplatform.domain.enums.OutboxStatus;
 import com.managementplatform.domain.model.OutboxMessage;
+import com.managementplatform.domain.model.RetryIdempotencyRecord;
 import com.managementplatform.shared.exception.ValidationException;
 import java.time.Instant;
 import java.util.List;

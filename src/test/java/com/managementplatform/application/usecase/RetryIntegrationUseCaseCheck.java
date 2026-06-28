@@ -7,6 +7,7 @@ import com.managementplatform.application.port.IntegrationRetryRepository;
 import com.managementplatform.domain.enums.OutboxMessageType;
 import com.managementplatform.domain.enums.OutboxStatus;
 import com.managementplatform.domain.model.OutboxMessage;
+import com.managementplatform.domain.model.RetryIdempotencyRecord;
 import com.managementplatform.shared.exception.ConflictException;
 import com.managementplatform.shared.exception.ResourceNotFoundException;
 import com.managementplatform.shared.exception.ValidationException;
@@ -72,7 +73,7 @@ public final class RetryIntegrationUseCaseCheck {
 
         RetryIntegrationResponse response = useCase.retry(201, new RetryIntegrationRequest(" retry-success "));
         OutboxMessage saved = repository.messagesById.get(201L);
-        IntegrationRetryRepository.RetryIdempotencyRecord record = repository.retryIdempotencyRecords.get("retry-success");
+        RetryIdempotencyRecord record = repository.retryIdempotencyRecords.get("retry-success");
 
         require(executor.callCount == 1, "eligible integration should be executed once");
         require(executor.executedMessages.getFirst().id() == 201, "executor should receive selected integration message");
@@ -91,7 +92,7 @@ public final class RetryIntegrationUseCaseCheck {
 
     private static void replaysExistingResultForSameIdempotencyKeyWithoutExecutingAgain() {
         StubIntegrationRetryRepository repository = new StubIntegrationRetryRepository();
-        repository.retryIdempotencyRecords.put("retry-same", new IntegrationRetryRepository.RetryIdempotencyRecord(
+        repository.retryIdempotencyRecords.put("retry-same", new RetryIdempotencyRecord(
             "retry-same",
             301,
             401,
@@ -115,7 +116,7 @@ public final class RetryIntegrationUseCaseCheck {
 
     private static void detectsIdempotencyConflictForDifferentIntegration() {
         StubIntegrationRetryRepository repository = new StubIntegrationRetryRepository();
-        repository.retryIdempotencyRecords.put("retry-conflict", new IntegrationRetryRepository.RetryIdempotencyRecord(
+        repository.retryIdempotencyRecords.put("retry-conflict", new RetryIdempotencyRecord(
             "retry-conflict",
             401,
             501,

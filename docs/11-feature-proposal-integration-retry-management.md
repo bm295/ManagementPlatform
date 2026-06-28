@@ -70,7 +70,7 @@ and the customer or downstream partner does not receive a duplicate follow-up ac
 - [x] Create `com.managementplatform.application.port.IntegrationRetryExecutor` for executing the selected follow-up action without exposing HTTP or infrastructure details to the use case.
 - [x] Create `com.managementplatform.application.usecase.ListRetryableIntegrationsUseCase` to validate pagination and return the recovery work queue.
 - [x] Create `com.managementplatform.application.usecase.RetryIntegrationUseCase` to validate retry eligibility, enforce retry idempotency, detect idempotency conflicts, execute one selected follow-up action, and return the latest retry result.
-- [ ] Create or extend domain state needed to track retry idempotency keys separately from checkout idempotency keys.
+- [x] Create or extend domain state needed to track retry idempotency keys separately from checkout idempotency keys.
 - [ ] Add an in-memory implementation of `IntegrationRetryRepository` under `com.managementplatform.infrastructure.repository` for the demo runtime and automated checks.
 - [ ] Add an infrastructure implementation of `IntegrationRetryExecutor` that can retry the supported follow-up action types, starting with checkout email delivery.
 - [ ] Add HTTP route handling for `GET /api/integrations/retryable` in the presentation adapter.

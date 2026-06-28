@@ -25,7 +25,7 @@ This checklist tracks the refactor needed to move `ManagementPlatformApplication
 - [x] Update the manifest `mainClass` in `pom.xml` if the launcher class changes.
 - [x] Update README run instructions if the startup entrypoint changes.
 - [x] Add or update tests so the server still serves the same API routes after refactor.
-- [ ] Run `mvn test` after each structural change set.
+- [x] Run `mvn test` after each structural change set.
 
 ## Suggested End State
 

@@ -3,6 +3,7 @@ package com.managementplatform.application.port;
 import com.managementplatform.domain.enums.OutboxMessageType;
 import com.managementplatform.domain.enums.OutboxStatus;
 import com.managementplatform.domain.model.OutboxMessage;
+import com.managementplatform.domain.model.RetryIdempotencyRecord;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,25 +57,4 @@ public interface IntegrationRetryRepository {
      */
     void saveRetryIdempotencyRecord(RetryIdempotencyRecord record);
 
-    /**
-     * Stored retry result associated with one retry idempotency key.
-     *
-     * @param idempotencyKey caller-provided key used to make retry commands idempotent
-     * @param outboxMessageId identifier of the retried outbox message
-     * @param checkoutAttemptId identifier of the checkout attempt that owns the message
-     * @param type integration follow-up action type
-     * @param status latest outbox message status for the stored retry result
-     * @param attemptCount number of attempts recorded for the integration message
-     * @param failureReason latest failure reason, if the retry did not complete successfully
-     */
-    record RetryIdempotencyRecord(
-        String idempotencyKey,
-        long outboxMessageId,
-        long checkoutAttemptId,
-        OutboxMessageType type,
-        OutboxStatus status,
-        int attemptCount,
-        String failureReason
-    ) {
-    }
 }
