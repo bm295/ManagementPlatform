@@ -67,6 +67,15 @@ public final class ManagementPlatformApplicationCheck {
             require(root.body().contains("Search orders by name"), "landing page should include order search UI");
             require(root.body().contains("Checkout"), "landing page should include checkout UI");
             require(root.body().contains("Refresh dead letters"), "landing page should include dead-letter monitoring UI");
+            require(root.body().contains("/admin"), "landing page should link to admin recovery UI");
+
+            HttpResponse<String> admin = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/admin")).GET().build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(admin.statusCode() == 200, "GET /admin should return HTTP 200");
+            require(admin.body().contains("Retry payments"), "admin page should list retry payments");
+            require(admin.body().contains("Dead letter messages"), "admin page should list dead letter messages");
 
             HttpResponse<String> orders = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders?page=1&pageSize=2&name=Acme")).GET().build(),
@@ -122,6 +131,17 @@ public final class ManagementPlatformApplicationCheck {
                 HttpResponse.BodyHandlers.ofString()
             );
             require(failedCheckout.statusCode() == 200, "failed payment checkout should still return HTTP 200");
+
+            HttpResponse<String> retryCheckout = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/checkouts/2/retry"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"idempotencyKey\":\"http-checkout-retry\",\"paymentMethodToken\":\"tok_success\"}"))
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(retryCheckout.statusCode() == 200, "POST /api/checkouts/{id}/retry should return HTTP 200");
+            require(retryCheckout.body().contains("\"checkoutId\":3"), "retry payment should create a new checkout attempt");
+            require(retryCheckout.body().contains("\"status\":\"PaymentSucceeded\""), "retry payment should succeed with a valid token");
 
             HttpResponse<String> deadLetters = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/dead-letters")).GET().build(),

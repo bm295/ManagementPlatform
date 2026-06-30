@@ -69,9 +69,41 @@ public final class CheckoutUseCase {
         validate(request);
 
         String idempotencyKey = request.idempotencyKey().trim();
+        return chargeNewCheckoutWithIdempotency(orderId, idempotencyKey, request.paymentMethodToken());
+    }
+
+    /**
+     * Retries payment for a failed checkout attempt using a fresh idempotency key.
+     *
+     * @param checkoutId failed checkout attempt identifier
+     * @param request retry payment request body
+     * @return checkout response for the retry attempt
+     * @throws ValidationException when the request is invalid or the checkout is not failed
+     * @throws ResourceNotFoundException when the checkout does not exist
+     * @throws ConflictException when the order is no longer available for payment
+     */
+    public CheckoutResponse retryPayment(long checkoutId, CheckoutRequest request) {
+        validate(request);
+
+        CheckoutAttempt failedAttempt = checkoutRepository.findById(checkoutId)
+            .orElseThrow(() -> new ResourceNotFoundException("Checkout %d was not found.".formatted(checkoutId)));
+
+        if (failedAttempt.status() != CheckoutStatus.PAYMENT_FAILED) {
+            throw new ValidationException("Checkout %d is not eligible for payment retry.".formatted(checkoutId));
+        }
+
+        String idempotencyKey = request.idempotencyKey().trim();
+        if (idempotencyKey.equals(failedAttempt.idempotencyKey())) {
+            throw new ValidationException("Retry idempotencyKey must be different from the failed checkout idempotencyKey.");
+        }
+
+        return chargeNewCheckoutWithIdempotency(failedAttempt.orderId(), idempotencyKey, request.paymentMethodToken());
+    }
+
+    private CheckoutResponse chargeNewCheckoutWithIdempotency(long orderId, String idempotencyKey, String paymentMethodToken) {
         return checkoutRepository.findByOrderIdAndIdempotencyKey(orderId, idempotencyKey)
             .map(CheckoutUseCase::toResponse)
-            .orElseGet(() -> createAndChargeCheckoutAttempt(orderId, idempotencyKey, request.paymentMethodToken()));
+            .orElseGet(() -> createAndChargeCheckoutAttempt(orderId, idempotencyKey, paymentMethodToken));
     }
 
     private CheckoutResponse createAndChargeCheckoutAttempt(long orderId, String idempotencyKey, String paymentMethodToken) {

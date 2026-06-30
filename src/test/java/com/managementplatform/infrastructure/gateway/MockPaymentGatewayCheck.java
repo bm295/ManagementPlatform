@@ -13,6 +13,8 @@ public final class MockPaymentGatewayCheck {
         normalTokenSucceedsOnFirstAttempt();
         retryTokenSucceedsAfterMultipleAttempts();
         declineAndFailTokensReturnClearFailures();
+        unstableTokenCanFailByChance();
+        unstableTokenCanSucceedByChance();
     }
 
     private static void normalTokenSucceedsOnFirstAttempt() {
@@ -39,6 +41,20 @@ public final class MockPaymentGatewayCheck {
         require(decline.failureReason().contains("declined"), "decline failure should have a clear reason");
         require(fail.status() == PaymentStatus.FAILED, "fail token should fail");
         require(fail.failureReason().contains("failed"), "fail token should have a clear reason");
+    }
+
+    private static void unstableTokenCanFailByChance() {
+        PaymentGatewayResult result = new MockPaymentGateway(() -> 0).charge(request("tok_unstable"));
+
+        require(result.status() == PaymentStatus.FAILED, "unstable token should fail when chance roll is low");
+        require(result.failureReason().contains("chance"), "chance failure should have a clear reason");
+    }
+
+    private static void unstableTokenCanSucceedByChance() {
+        PaymentGatewayResult result = new MockPaymentGateway(() -> 99).charge(request("tok_unstable"));
+
+        require(result.status() == PaymentStatus.SUCCEEDED, "unstable token should succeed when chance roll is high");
+        require(result.failureReason() == null, "chance success should not include a failure reason");
     }
 
     private static PaymentGatewayRequest request(String token) {

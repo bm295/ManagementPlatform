@@ -43,6 +43,8 @@ public final class CheckoutUseCaseCheck {
         marksOrderProcessingBeforePaymentChargeStep();
         recordsDeclinedPaymentFailure();
         recordsPaymentFailureAndDeadLetter();
+        retriesFailedPaymentWithFreshIdempotencyKey();
+        rejectsRetryWhenCheckoutDidNotFail();
         retryTokenSucceedsAndRecordsMultipleAttempts();
         recordsPaymentSuccessOrderAndPendingOutbox();
     }
@@ -186,6 +188,43 @@ public final class CheckoutUseCaseCheck {
         require(response.integrations().getFirst().status() == OutboxStatus.FAILED, "failed response integration should be failed");
     }
 
+    private static void retriesFailedPaymentWithFreshIdempotencyKey() {
+        Order order = order();
+        InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
+        SequencePaymentGateway paymentGateway = new SequencePaymentGateway(
+            new PaymentGatewayResult(PaymentStatus.FAILED, 1, "mock_fail", "Transient gateway outage."),
+            new PaymentGatewayResult(PaymentStatus.SUCCEEDED, 1, "mock_success", null)
+        );
+        CheckoutUseCase useCase = useCaseWith(order, checkoutRepository, new InMemoryDeadLetterRepository(), paymentGateway);
+
+        CheckoutResponse failed = useCase.checkout(ORDER_ID, new CheckoutRequest("first-key", "tok_unstable"));
+        CheckoutResponse retried = useCase.retryPayment(failed.checkoutId(), new CheckoutRequest("retry-key", "tok_success"));
+        CheckoutResponse duplicateRetry = useCase.retryPayment(failed.checkoutId(), new CheckoutRequest("retry-key", "tok_success"));
+
+        require(failed.status() == CheckoutStatus.PAYMENT_FAILED, "first payment should fail before retry");
+        require(retried.checkoutId() != failed.checkoutId(), "retry should create a new checkout attempt");
+        require(retried.status() == CheckoutStatus.PAYMENT_SUCCEEDED, "retry payment should return succeeded checkout response");
+        require(duplicateRetry.checkoutId() == retried.checkoutId(), "duplicate retry key should return existing retry attempt");
+        require(paymentGateway.callCount == 2, "duplicate retry should not charge payment gateway again");
+        require(order.checkoutAttempts().size() == 2, "order should keep original failed attempt and retry attempt");
+        require(order.status() == OrderStatus.PAID, "successful retry should mark order paid");
+    }
+
+    private static void rejectsRetryWhenCheckoutDidNotFail() {
+        Order order = order();
+        CheckoutUseCase useCase = useCaseWithOrder(order);
+
+        CheckoutResponse response = useCase.checkout(ORDER_ID, new CheckoutRequest("success-key", "tok_success"));
+
+        try {
+            useCase.retryPayment(response.checkoutId(), new CheckoutRequest("retry-key", "tok_success"));
+            throw new AssertionError("successful checkout should not be eligible for payment retry");
+        } catch (ValidationException exception) {
+            require(exception.getMessage().equals("Checkout %d is not eligible for payment retry.".formatted(response.checkoutId())),
+                "retry rejection message should include checkout id");
+        }
+    }
+
     private static void retryTokenSucceedsAndRecordsMultipleAttempts() {
         Order order = order();
         InMemoryCheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
@@ -259,6 +298,23 @@ public final class CheckoutUseCaseCheck {
     private static void require(boolean condition, String message) {
         if (!condition) {
             throw new AssertionError(message);
+        }
+    }
+
+
+    private static final class SequencePaymentGateway implements PaymentGateway {
+        private final PaymentGatewayResult[] results;
+        private int callCount;
+
+        private SequencePaymentGateway(PaymentGatewayResult... results) {
+            this.results = results;
+        }
+
+        @Override
+        public PaymentGatewayResult charge(PaymentGatewayRequest request) {
+            PaymentGatewayResult result = results[Math.min(callCount, results.length - 1)];
+            callCount++;
+            return result;
         }
     }
 

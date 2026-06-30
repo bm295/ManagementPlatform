@@ -5,13 +5,33 @@ import com.managementplatform.application.port.PaymentGatewayRequest;
 import com.managementplatform.application.port.PaymentGatewayResult;
 import com.managementplatform.domain.enums.PaymentStatus;
 import java.util.Locale;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.IntSupplier;
 
 /**
- * Deterministic payment gateway implementation for local development and tests.
+ * Mock payment gateway implementation for local development and tests.
  */
 public final class MockPaymentGateway implements PaymentGateway {
     private static final int NORMAL_ATTEMPT_COUNT = 1;
     private static final int RETRY_ATTEMPT_COUNT = 2;
+    private static final int UNSTABLE_FAILURE_PERCENT = 25;
+    private final IntSupplier failureRollSupplier;
+
+    /**
+     * Creates a mock gateway with realistic unstable-token randomness.
+     */
+    public MockPaymentGateway() {
+        this(() -> ThreadLocalRandom.current().nextInt(100));
+    }
+
+    /**
+     * Creates a mock gateway with an injectable roll supplier for deterministic checks.
+     *
+     * @param failureRollSupplier supplies a value from 0 through 99 for chance-based failures
+     */
+    public MockPaymentGateway(IntSupplier failureRollSupplier) {
+        this.failureRollSupplier = failureRollSupplier;
+    }
 
     @Override
     public PaymentGatewayResult charge(PaymentGatewayRequest request) {
@@ -23,6 +43,10 @@ public final class MockPaymentGateway implements PaymentGateway {
 
         if (token.contains("fail")) {
             return failed(request, "Payment failed in the mock gateway.");
+        }
+
+        if (token.contains("unstable") && failureRollSupplier.getAsInt() < UNSTABLE_FAILURE_PERCENT) {
+            return failed(request, "Payment failed by chance in the mock gateway.");
         }
 
         int attemptCount = token.contains("retry") ? RETRY_ATTEMPT_COUNT : NORMAL_ATTEMPT_COUNT;

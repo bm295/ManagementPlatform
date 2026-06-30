@@ -18,6 +18,8 @@
         button { border: 0; border-radius: 12px; background: #2854d8; color: white; cursor: pointer; font-weight: 800; padding: 13px 18px; }
         button.secondary { background: #eef3ff; color: #2854d8; }
         button:disabled { cursor: wait; opacity: 0.65; }
+        .spinner { width: 1rem; height: 1rem; border: 2px solid rgba(255, 255, 255, 0.45); border-top-color: white; border-radius: 50%; display: inline-block; vertical-align: -0.15em; margin-right: 8px; animation: spin 0.75s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         .grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr); gap: 24px; }
         .card { padding: 22px; }
         .orders { display: grid; gap: 12px; }
@@ -37,7 +39,7 @@
 <body>
     <header>
         <h1>Orders</h1>
-        <p>Find an order, view its details, and complete payment from one simple screen.</p>
+        <p>Find an order, view its details, and complete payment from one simple screen. <a href="/admin" style="color: #dbe6ff; font-weight: 800;">Open admin recovery</a></p>
     </header>
     <main>
         <div class="sr-only" aria-hidden="true">Management Platform API Search orders by name Checkout Refresh dead letters</div>
@@ -56,18 +58,19 @@
                 <div id="selected" class="notice">Choose an order to see more details and continue.</div>
                 <div class="actions">
                     <label>Reference<input id="idempotencyKey" value="demo-ui-1"></label>
-                    <label>Payment code<input id="paymentToken" value="tok_success"></label>
+                    <label>Payment code<input id="paymentToken" value="tok_unstable"></label>
                     <button id="checkoutButton" disabled hidden>Pay now</button>
                 </div>
                 <label>Check payment by number<input id="checkoutId" placeholder="1"></label>
                 <button class="secondary" id="lookupButton">Check payment</button>
+                <button class="secondary" id="retryButton" hidden>Retry failed payment</button>
                 <button class="secondary" id="deadLettersButton">Refresh list</button>
                 <pre id="output">Ready.</pre>
             </aside>
         </section>
     </main>
     <script>
-        const state = { selectedOrderId: null };
+        const state = { selectedOrderId: null, paying: false, canPaySelectedOrder: false, failedCheckoutId: null };
         const $ = (id) => document.getElementById(id);
         const show = (value) => { $('output').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); };
         async function api(path, options) {
@@ -76,6 +79,19 @@
             const data = text ? JSON.parse(text) : null;
             if (!response.ok) throw data;
             return data;
+        }
+        function renderCheckoutButton() {
+            const checkoutButton = $('checkoutButton');
+            checkoutButton.hidden = !state.canPaySelectedOrder;
+            checkoutButton.disabled = state.paying || !state.canPaySelectedOrder;
+            checkoutButton.setAttribute('aria-busy', String(state.paying));
+            checkoutButton.innerHTML = state.paying ? '<span class="spinner" aria-hidden="true"></span>Paying...' : 'Pay now';
+            $('retryButton').hidden = !state.failedCheckoutId;
+            $('retryButton').disabled = state.paying || !state.failedCheckoutId;
+        }
+        function setPaying(isPaying) {
+            state.paying = isPaying;
+            renderCheckoutButton();
         }
         function renderOrders(items) {
             state.orders = items;
@@ -91,6 +107,11 @@
                 const params = new URLSearchParams({ page: '1', pageSize: $('pageSize').value, name: $('search').value });
                 const data = await api('/api/orders?' + params);
                 renderOrders(data.items);
+                const selectedOrder = data.items.find(order => String(order.id) === String(state.selectedOrderId));
+                if (selectedOrder) {
+                    state.canPaySelectedOrder = selectedOrder.status === 'Draft';
+                    renderCheckoutButton();
+                }
                 show(data);
             } catch (error) { show(error); } finally { $('searchButton').disabled = false; }
         }
@@ -98,25 +119,56 @@
             const order = await api('/api/orders/' + orderId);
             state.selectedOrderId = order.id;
             renderOrders(state.orders);
-            const canPay = order.status === 'Draft';
-            $('checkoutButton').hidden = !canPay;
-            $('checkoutButton').disabled = !canPay;
+            state.canPaySelectedOrder = order.status === 'Draft';
+            renderCheckoutButton();
             $('selected').innerHTML = `<strong>${order.name}</strong><br>${order.tenantName} &lt;${order.tenantEmail}&gt;<br>${order.currency} ${order.amount.toFixed(2)} · ${order.status}`;
             show(order);
         }
         function clearSelectedOrder() {
             state.selectedOrderId = null;
             renderOrders(state.orders);
-            $('checkoutButton').hidden = true;
-            $('checkoutButton').disabled = true;
+            state.canPaySelectedOrder = false;
+            state.failedCheckoutId = null;
+            state.paying = false;
+            renderCheckoutButton();
             $('selected').textContent = 'Choose an order to see more details and continue.';
         }
+        function rememberFailedCheckout(data) {
+            if (data.paymentStatus === 'Failed') {
+                state.failedCheckoutId = data.checkoutId;
+                if (!$('idempotencyKey').value.endsWith('-retry')) {
+                    $('idempotencyKey').value = $('idempotencyKey').value + '-retry';
+                }
+            } else {
+                state.failedCheckoutId = null;
+            }
+            renderCheckoutButton();
+        }
         async function checkout() {
-            const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
-            const data = await api('/api/orders/' + state.selectedOrderId + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-            $('checkoutId').value = data.checkoutId;
-            await searchOrders();
-            show(data);
+            setPaying(true);
+            try {
+                const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
+                const data = await api('/api/orders/' + state.selectedOrderId + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+                $('checkoutId').value = data.checkoutId;
+                await searchOrders();
+                rememberFailedCheckout(data);
+                show(data);
+            } finally {
+                setPaying(false);
+            }
+        }
+        async function retryPayment() {
+            setPaying(true);
+            try {
+                const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
+                const data = await api('/api/checkouts/' + state.failedCheckoutId + '/retry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+                $('checkoutId').value = data.checkoutId;
+                await searchOrders();
+                rememberFailedCheckout(data);
+                show(data);
+            } finally {
+                setPaying(false);
+            }
         }
         $('orders').addEventListener('click', (event) => {
             const card = event.target.closest('.order');
@@ -137,7 +189,8 @@
         });
         $('searchForm').addEventListener('submit', (event) => { event.preventDefault(); searchOrders(); });
         $('checkoutButton').addEventListener('click', () => checkout().catch(show));
-        $('lookupButton').addEventListener('click', () => api('/api/checkouts/' + $('checkoutId').value).then(show).catch(show));
+        $('retryButton').addEventListener('click', () => retryPayment().catch(show));
+        $('lookupButton').addEventListener('click', () => api('/api/checkouts/' + $('checkoutId').value).then(data => { rememberFailedCheckout(data); show(data); }).catch(show));
         $('deadLettersButton').addEventListener('click', () => api('/api/dead-letters').then(show).catch(show));
         searchOrders();
     </script>

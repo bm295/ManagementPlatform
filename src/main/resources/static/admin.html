@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Admin Recovery</title>
+    <style>
+        :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: #f3f6fb; color: #172033; }
+        header { background: linear-gradient(135deg, #172033, #7a2bd8); color: white; padding: 42px clamp(20px, 5vw, 72px); }
+        header p, header a { color: #eadfff; }
+        main { display: grid; gap: 24px; padding: 28px clamp(16px, 4vw, 64px) 48px; }
+        .toolbar, .card { background: white; border: 1px solid #dfe7f5; border-radius: 18px; box-shadow: 0 18px 45px rgba(23, 32, 51, 0.08); }
+        .toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; padding: 18px; }
+        button, a.button { border: 0; border-radius: 12px; background: #2854d8; color: white; cursor: pointer; font-weight: 800; padding: 12px 16px; text-decoration: none; }
+        button.secondary, a.secondary { background: #eef3ff; color: #2854d8; }
+        button:disabled { cursor: wait; opacity: 0.65; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+        .card { padding: 22px; }
+        .list { display: grid; gap: 12px; }
+        .item { border: 1px solid #e4ebf7; border-radius: 14px; padding: 14px; display: grid; gap: 8px; }
+        .item h3 { margin: 0; }
+        .meta { color: #66758d; display: flex; flex-wrap: wrap; gap: 10px; }
+        .badge { border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; }
+        .badge.retry { background: #fff0df; color: #9a4f00; }
+        .badge.dead { background: #fee2e2; color: #991b1b; }
+        .empty { border-radius: 12px; padding: 12px 14px; background: #eef8ee; color: #27632a; }
+        pre { background: #101827; color: #d8e7ff; border-radius: 14px; overflow: auto; padding: 16px; white-space: pre-wrap; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Admin recovery</h1>
+        <p>Review retry payment work and dead letter messages from checkout failures.</p>
+        <a href="/">Back to orders</a>
+    </header>
+    <main>
+        <section class="toolbar" aria-label="Admin actions">
+            <strong>Operations dashboard</strong>
+            <button id="refreshButton">Refresh recovery lists</button>
+        </section>
+        <section class="grid">
+            <article class="card">
+                <h2>Retry payments</h2>
+                <p>Failed payment charge messages that can be investigated before retrying the payment flow.</p>
+                <div id="retryPayments" class="list" aria-live="polite"></div>
+            </article>
+            <article class="card">
+                <h2>Dead letter messages</h2>
+                <p>All dead-lettered checkout work items, newest first.</p>
+                <div id="deadLetters" class="list" aria-live="polite"></div>
+            </article>
+        </section>
+        <pre id="output">Ready.</pre>
+    </main>
+    <script>
+        const $ = (id) => document.getElementById(id);
+        const show = (value) => { $('output').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); };
+        async function api(path) {
+            const response = await fetch(path);
+            const text = await response.text();
+            const data = text ? JSON.parse(text) : null;
+            if (!response.ok) throw data;
+            return data;
+        }
+        function renderList(id, items, emptyText, renderer) {
+            $(id).innerHTML = items.length ? items.map(renderer).join('') : `<div class="empty">${emptyText}</div>`;
+        }
+        function itemHtml(message, badgeClass) {
+            return `<section class="item">
+                <h3>${message.type} #${message.outboxMessageId}</h3>
+                <div class="meta"><span class="badge ${badgeClass}">${message.type}</span><span>Checkout #${message.checkoutAttemptId}</span><span>Attempts: ${message.attemptCount}</span><span>${message.failedAt}</span></div>
+                <div>${message.failureReason || 'No failure reason recorded.'}</div>
+            </section>`;
+        }
+        async function refreshAdmin() {
+            $('refreshButton').disabled = true;
+            try {
+                const deadLetters = await api('/api/dead-letters');
+                const retryPayments = deadLetters.filter(message => message.type === 'PaymentCharge');
+                renderList('retryPayments', retryPayments, 'No failed payment charges need attention.', message => itemHtml(message, 'retry'));
+                renderList('deadLetters', deadLetters, 'No dead letter messages found.', message => itemHtml(message, 'dead'));
+                show({ retryPayments, deadLetters });
+            } catch (error) {
+                show(error);
+            } finally {
+                $('refreshButton').disabled = false;
+            }
+        }
+        $('refreshButton').addEventListener('click', () => refreshAdmin());
+        refreshAdmin();
+    </script>
+</body>
+</html>
