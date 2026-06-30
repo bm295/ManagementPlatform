@@ -18,7 +18,8 @@ public final class ManagementPlatformHttpAdapter {
     private static final String HTML_CONTENT_TYPE = "text/html; charset=utf-8";
     private static final String JSON_CONTENT_TYPE = "application/json; charset=utf-8";
     private static final String PROBLEM_CONTENT_TYPE = "application/problem+json; charset=utf-8";
-    private static final byte[] LANDING_PAGE_BODY = landingPageHtml().getBytes(StandardCharsets.UTF_8);
+    private static final byte[] LANDING_PAGE_BODY = staticPageHtml("/static/index.html", "landing page").getBytes(StandardCharsets.UTF_8);
+    private static final byte[] ADMIN_PAGE_BODY = staticPageHtml("/static/admin.html", "admin page").getBytes(StandardCharsets.UTF_8);
 
     private final ManagementPlatformRouteHandlers routeHandlers;
 
@@ -62,25 +63,30 @@ public final class ManagementPlatformHttpAdapter {
             sendMethodNotAllowed(exchange, "GET");
             return;
         }
-        if (!"/".equals(exchange.getRequestURI().getPath())) {
+        byte[] body = switch (exchange.getRequestURI().getPath()) {
+            case "/" -> LANDING_PAGE_BODY;
+            case "/admin" -> ADMIN_PAGE_BODY;
+            default -> null;
+        };
+        if (body == null) {
             sendProblem(exchange, 404, "Not Found", "Route was not found.");
             return;
         }
         exchange.getResponseHeaders().set("Content-Type", HTML_CONTENT_TYPE);
-        exchange.sendResponseHeaders(200, LANDING_PAGE_BODY.length);
+        exchange.sendResponseHeaders(200, body.length);
         try (OutputStream responseBody = exchange.getResponseBody()) {
-            responseBody.write(LANDING_PAGE_BODY);
+            responseBody.write(body);
         }
     }
 
-    private static String landingPageHtml() {
-        try (InputStream resource = ManagementPlatformHttpAdapter.class.getResourceAsStream("/static/index.html")) {
+    private static String staticPageHtml(String resourcePath, String description) {
+        try (InputStream resource = ManagementPlatformHttpAdapter.class.getResourceAsStream(resourcePath)) {
             if (resource == null) {
-                throw new IllegalStateException("Static landing page resource was not found.");
+                throw new IllegalStateException("Static %s resource was not found.".formatted(description));
             }
             return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException exception) {
-            throw new UncheckedIOException("Unable to load static landing page.", exception);
+            throw new UncheckedIOException("Unable to load static %s.".formatted(description), exception);
         }
     }
 
