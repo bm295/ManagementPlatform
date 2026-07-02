@@ -20,20 +20,24 @@
         button:disabled { cursor: wait; opacity: 0.65; }
         .spinner { width: 1rem; height: 1rem; border: 2px solid rgba(255, 255, 255, 0.45); border-top-color: white; border-radius: 50%; display: inline-block; vertical-align: -0.15em; margin-right: 8px; animation: spin 0.75s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr); gap: 24px; }
+        .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
         .card { padding: 22px; }
+        .orders-card { display: grid; gap: 16px; }
         .orders { display: grid; gap: 12px; }
         .order { border: 1px solid #e4ebf7; border-radius: 14px; padding: 16px; display: grid; gap: 8px; }
         .order.selected { border-color: #2854d8; background: #eef3ff; box-shadow: inset 0 0 0 1px rgba(40, 84, 216, 0.14); }
         .order h3 { margin: 0; }
         .meta { color: #66758d; display: flex; flex-wrap: wrap; gap: 10px; }
         .status { background: #eef3ff; color: #2448b8; border-radius: 999px; padding: 4px 10px; font-size: 0.82rem; font-weight: 800; }
-        .detail { display: grid; gap: 14px; }
-        .actions { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; }
+        .status.status--draft { background: #eef3ff; color: #2448b8; }
+        .status.status--paid { background: #e7f8ee; color: #1b7f41; }
+        .status.status--failed { background: #fdecec; color: #bb1e2d; }
+        .payment-panel { display: grid; gap: 14px; }
+        .checkout { display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px; align-items: end; }
         pre { background: #101827; color: #d8e7ff; border-radius: 14px; overflow: auto; padding: 16px; white-space: pre-wrap; }
         .notice { border-radius: 12px; padding: 12px 14px; background: #fff8e8; color: #7a4e00; }
         .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
-        @media (max-width: 900px) { .toolbar, .grid, .actions { grid-template-columns: 1fr; } }
+        @media (max-width: 900px) { .toolbar, .checkout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -42,35 +46,30 @@
         <p>Find an order, view its details, and complete payment from one simple screen. <a href="/admin" style="color: #dbe6ff; font-weight: 800;">Open admin recovery</a></p>
     </header>
     <main>
-        <div class="sr-only" aria-hidden="true">Management Platform API Search orders by name Checkout Refresh dead letters</div>
+        <div class="sr-only" aria-hidden="true">Management Platform API Search orders by name Pay now</div>
         <form class="toolbar" id="searchForm" aria-label="Order search">
             <label>Find an order<input id="search" placeholder="Try Acme or Globex" autocomplete="off"></label>
-            <label>Show<select id="pageSize"><option>3</option><option>5</option><option>10</option></select></label>
+            <label>Show<select id="pageSize"><option>5</option><option>10</option><option>3</option></select></label>
             <button id="searchButton" type="submit">Search</button>
         </form>
         <section class="grid">
-            <div class="card">
+            <div class="card orders-card">
                 <h2>Orders</h2>
-                <div id="orders" class="orders" aria-live="polite"></div>
-            </div>
-            <aside class="card detail">
-                <h2>Chosen order</h2>
-                <div id="selected" class="notice">Choose an order to see more details and continue.</div>
-                <div class="actions">
-                    <label>Reference<input id="idempotencyKey" value="demo-ui-1"></label>
-                    <label>Payment code<input id="paymentToken" value="tok_unstable"></label>
-                    <button id="checkoutButton" disabled hidden>Pay now</button>
+                <div class="payment-panel">
+                    <div id="selected" class="notice">Choose an order to see payment details and continue.</div>
+                    <div class="checkout">
+                        <label>Reference<input id="idempotencyKey" value="demo-ui-1"></label>
+                        <label>Payment code<input id="paymentToken" value="tok_unstable"></label>
+                        <button id="checkoutButton" disabled hidden>Pay now</button>
+                    </div>
                 </div>
-                <label>Check payment by number<input id="checkoutId" placeholder="1"></label>
-                <button class="secondary" id="lookupButton">Check payment</button>
-                <button class="secondary" id="retryButton" hidden>Retry failed payment</button>
-                <button class="secondary" id="deadLettersButton">Refresh list</button>
+                <div id="orders" class="orders" aria-live="polite"></div>
                 <pre id="output">Ready.</pre>
-            </aside>
+            </div>
         </section>
     </main>
     <script>
-        const state = { selectedOrderId: null, paying: false, canPaySelectedOrder: false, failedCheckoutId: null };
+        const state = { selectedOrderId: null, paying: false, canPaySelectedOrder: false };
         const $ = (id) => document.getElementById(id);
         const show = (value) => { $('output').textContent = typeof value === 'string' ? value : JSON.stringify(value, null, 2); };
         async function api(path, options) {
@@ -86,19 +85,28 @@
             checkoutButton.disabled = state.paying || !state.canPaySelectedOrder;
             checkoutButton.setAttribute('aria-busy', String(state.paying));
             checkoutButton.innerHTML = state.paying ? '<span class="spinner" aria-hidden="true"></span>Paying...' : 'Pay now';
-            $('retryButton').hidden = !state.failedCheckoutId;
-            $('retryButton').disabled = state.paying || !state.failedCheckoutId;
         }
         function setPaying(isPaying) {
             state.paying = isPaying;
             renderCheckoutButton();
+        }
+        function statusClass(status) {
+            const normalized = String(status).trim().toLowerCase();
+            if (normalized === 'paid') return 'status--paid';
+            if (normalized === 'failed') return 'status--failed';
+            return 'status--draft';
+        }
+        function renderSelectedOrder(order) {
+            state.canPaySelectedOrder = order.status === 'Draft';
+            renderCheckoutButton();
+            $('selected').innerHTML = `<strong>${order.name}</strong><br>${order.tenantName} &lt;${order.tenantEmail}&gt;<br>${order.currency} ${order.amount.toFixed(2)} - ${order.status}`;
         }
         function renderOrders(items) {
             state.orders = items;
             $('orders').innerHTML = items.map(order => `
                     <article class="order${String(order.id) === String(state.selectedOrderId) ? ' selected' : ''}" data-order-id="${order.id}" role="button" tabindex="0" aria-pressed="${String(order.id) === String(state.selectedOrderId)}">
                         <h3>${order.name}</h3>
-                        <div class="meta"><span>#${order.id}</span><span>${order.tenantName}</span><span>${order.currency} ${order.amount.toFixed(2)}</span><span class="status">${order.status}</span></div>
+                        <div class="meta"><span>#${order.id}</span><span>${order.tenantName}</span><span>${order.currency} ${order.amount.toFixed(2)}</span><span class="status ${statusClass(order.status)}">${order.status}</span></div>
                     </article>`).join('') || '<p>No orders matched your search.</p>';
         }
         async function searchOrders() {
@@ -109,8 +117,7 @@
                 renderOrders(data.items);
                 const selectedOrder = data.items.find(order => String(order.id) === String(state.selectedOrderId));
                 if (selectedOrder) {
-                    state.canPaySelectedOrder = selectedOrder.status === 'Draft';
-                    renderCheckoutButton();
+                    renderSelectedOrder(selectedOrder);
                 }
                 show(data);
             } catch (error) { show(error); } finally { $('searchButton').disabled = false; }
@@ -119,52 +126,26 @@
             const order = await api('/api/orders/' + orderId);
             state.selectedOrderId = order.id;
             renderOrders(state.orders);
-            state.canPaySelectedOrder = order.status === 'Draft';
-            renderCheckoutButton();
-            $('selected').innerHTML = `<strong>${order.name}</strong><br>${order.tenantName} &lt;${order.tenantEmail}&gt;<br>${order.currency} ${order.amount.toFixed(2)} · ${order.status}`;
+            renderSelectedOrder(order);
             show(order);
         }
         function clearSelectedOrder() {
             state.selectedOrderId = null;
             renderOrders(state.orders);
             state.canPaySelectedOrder = false;
-            state.failedCheckoutId = null;
             state.paying = false;
             renderCheckoutButton();
-            $('selected').textContent = 'Choose an order to see more details and continue.';
-        }
-        function rememberFailedCheckout(data) {
-            if (data.paymentStatus === 'Failed') {
-                state.failedCheckoutId = data.checkoutId;
-                if (!$('idempotencyKey').value.endsWith('-retry')) {
-                    $('idempotencyKey').value = $('idempotencyKey').value + '-retry';
-                }
-            } else {
-                state.failedCheckoutId = null;
-            }
-            renderCheckoutButton();
+            $('selected').textContent = 'Choose an order to see payment details and continue.';
         }
         async function checkout() {
             setPaying(true);
             try {
                 const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
                 const data = await api('/api/orders/' + state.selectedOrderId + '/checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-                $('checkoutId').value = data.checkoutId;
                 await searchOrders();
-                rememberFailedCheckout(data);
-                show(data);
-            } finally {
-                setPaying(false);
-            }
-        }
-        async function retryPayment() {
-            setPaying(true);
-            try {
-                const body = JSON.stringify({ idempotencyKey: $('idempotencyKey').value, paymentMethodToken: $('paymentToken').value });
-                const data = await api('/api/checkouts/' + state.failedCheckoutId + '/retry', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
-                $('checkoutId').value = data.checkoutId;
-                await searchOrders();
-                rememberFailedCheckout(data);
+                if (state.selectedOrderId) {
+                    await selectOrder(state.selectedOrderId);
+                }
                 show(data);
             } finally {
                 setPaying(false);
@@ -184,14 +165,11 @@
         });
         document.addEventListener('click', (event) => {
             if (!state.selectedOrderId) return;
-            if ($('selected').contains(event.target) || $('orders').contains(event.target)) return;
+            if ($('selected').contains(event.target) || $('orders').contains(event.target) || event.target.closest('.payment-panel')) return;
             clearSelectedOrder();
         });
         $('searchForm').addEventListener('submit', (event) => { event.preventDefault(); searchOrders(); });
         $('checkoutButton').addEventListener('click', () => checkout().catch(show));
-        $('retryButton').addEventListener('click', () => retryPayment().catch(show));
-        $('lookupButton').addEventListener('click', () => api('/api/checkouts/' + $('checkoutId').value).then(data => { rememberFailedCheckout(data); show(data); }).catch(show));
-        $('deadLettersButton').addEventListener('click', () => api('/api/dead-letters').then(show).catch(show));
         searchOrders();
     </script>
 </body>

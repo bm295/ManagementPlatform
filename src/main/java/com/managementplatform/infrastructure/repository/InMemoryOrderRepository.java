@@ -75,5 +75,7 @@ public final class InMemoryOrderRepository implements OrderRepository {
         save(new Order(1, acme.id(), acme, "Acme onboarding package", new BigDecimal("199.00"), "USD", baseTime.plusSeconds(120)));
         save(new Order(2, acme.id(), acme, "Acme renewal", new BigDecimal("499.00"), "USD", baseTime.plusSeconds(240)));
         save(new Order(3, globex.id(), globex, "Globex analytics subscription", new BigDecimal("299.00"), "USD", baseTime.plusSeconds(360)));
+        save(new Order(4, globex.id(), globex, "Globex premium support", new BigDecimal("149.00"), "USD", baseTime.plusSeconds(480)));
+        save(new Order(5, acme.id(), acme, "Acme migration services", new BigDecimal("899.00"), "USD", baseTime.plusSeconds(600)));
     }
 }

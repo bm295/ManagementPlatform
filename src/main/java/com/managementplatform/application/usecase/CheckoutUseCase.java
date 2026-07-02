@@ -69,7 +69,7 @@ public final class CheckoutUseCase {
         validate(request);
 
         String idempotencyKey = request.idempotencyKey().trim();
-        return chargeNewCheckoutWithIdempotency(orderId, idempotencyKey, request.paymentMethodToken());
+        return chargeNewCheckoutWithIdempotency(orderId, idempotencyKey, request.paymentMethodToken(), false);
     }
 
     /**
@@ -97,20 +97,20 @@ public final class CheckoutUseCase {
             throw new ValidationException("Retry idempotencyKey must be different from the failed checkout idempotencyKey.");
         }
 
-        return chargeNewCheckoutWithIdempotency(failedAttempt.orderId(), idempotencyKey, request.paymentMethodToken());
+        return chargeNewCheckoutWithIdempotency(failedAttempt.orderId(), idempotencyKey, request.paymentMethodToken(), true);
     }
 
-    private CheckoutResponse chargeNewCheckoutWithIdempotency(long orderId, String idempotencyKey, String paymentMethodToken) {
+    private CheckoutResponse chargeNewCheckoutWithIdempotency(long orderId, String idempotencyKey, String paymentMethodToken, boolean allowFailedOrder) {
         return checkoutRepository.findByOrderIdAndIdempotencyKey(orderId, idempotencyKey)
             .map(CheckoutUseCase::toResponse)
-            .orElseGet(() -> createAndChargeCheckoutAttempt(orderId, idempotencyKey, paymentMethodToken));
+            .orElseGet(() -> createAndChargeCheckoutAttempt(orderId, idempotencyKey, paymentMethodToken, allowFailedOrder));
     }
 
-    private CheckoutResponse createAndChargeCheckoutAttempt(long orderId, String idempotencyKey, String paymentMethodToken) {
+    private CheckoutResponse createAndChargeCheckoutAttempt(long orderId, String idempotencyKey, String paymentMethodToken, boolean allowFailedOrder) {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order %d was not found.".formatted(orderId)));
 
-        if (order.status() != OrderStatus.DRAFT) {
+        if (order.status() != OrderStatus.DRAFT && !(allowFailedOrder && order.status() == OrderStatus.FAILED)) {
             throw new ConflictException("Order %d is not available for checkout.".formatted(orderId));
         }
 
@@ -177,7 +177,7 @@ public final class CheckoutUseCase {
     private void handlePaymentFailure(Order order, CheckoutAttempt attempt, PaymentGatewayResult paymentResult) {
         String failureReason = paymentResult.failureReason() == null ? "Payment was declined." : paymentResult.failureReason();
         attempt.fail(failureReason, now());
-        order.markDraft();
+        order.markFailed();
 
         OutboxMessage failedPaymentMessage = new OutboxMessage(
             outboxMessageIds.getAndIncrement(),

@@ -81,6 +81,10 @@ public final class Order {
         status = OrderStatus.DRAFT;
     }
 
+    public void markFailed() {
+        status = OrderStatus.FAILED;
+    }
+
     public void markPaid(Instant when) {
         status = OrderStatus.PAID;
         paidAt = when;

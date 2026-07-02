@@ -10,10 +10,12 @@ public final class EnumApiNameCompatibilityCheck {
         require(List.of(OrderStatus.values()).equals(List.of(
             OrderStatus.DRAFT,
             OrderStatus.CHECKOUT_PROCESSING,
+            OrderStatus.FAILED,
             OrderStatus.PAID
         )), "OrderStatus must keep the documented API-compatible minimum states");
         require(OrderStatus.DRAFT.apiName().equals("Draft"), "DRAFT must serialize as Draft");
         require(OrderStatus.CHECKOUT_PROCESSING.apiName().equals("CheckoutProcessing"), "CHECKOUT_PROCESSING must serialize as CheckoutProcessing");
+        require(OrderStatus.FAILED.apiName().equals("Failed"), "FAILED must serialize as Failed");
         require(OrderStatus.PAID.apiName().equals("Paid"), "PAID must serialize as Paid");
 
         require(List.of(CheckoutStatus.values()).equals(List.of(

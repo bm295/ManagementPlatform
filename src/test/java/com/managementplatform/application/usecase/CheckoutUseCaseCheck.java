@@ -44,6 +44,7 @@ public final class CheckoutUseCaseCheck {
         recordsDeclinedPaymentFailure();
         recordsPaymentFailureAndDeadLetter();
         retriesFailedPaymentWithFreshIdempotencyKey();
+        marksOrderFailedWhenRetryablePaymentExhaustsRetries();
         rejectsRetryWhenCheckoutDidNotFail();
         retryTokenSucceedsAndRecordsMultipleAttempts();
         recordsPaymentSuccessOrderAndPendingOutbox();
@@ -150,7 +151,7 @@ public final class CheckoutUseCaseCheck {
         require(response.failureReason().contains("declined"), "declined payment should include decline reason");
         require(attempt.outboxMessages().getFirst().lastError().equals(response.failureReason()),
             "declined payment outbox should store the decline reason");
-        require(order.status() == OrderStatus.DRAFT, "declined payment should roll order back to DRAFT");
+        require(order.status() == OrderStatus.FAILED, "declined payment should mark order FAILED");
     }
 
     private static void recordsPaymentFailureAndDeadLetter() {
@@ -165,7 +166,7 @@ public final class CheckoutUseCaseCheck {
         require(response.status() == CheckoutStatus.PAYMENT_FAILED, "failed payment should return failed checkout response");
         require(response.paymentStatus() == PaymentStatus.FAILED, "failed payment should return failed payment status");
         require(response.failureReason().contains("failed"), "failed checkout response should include failure reason");
-        require(order.status() == OrderStatus.DRAFT, "failed payment should roll order back to DRAFT");
+        require(order.status() == OrderStatus.FAILED, "failed payment should mark order FAILED");
         require(attempt.status() == CheckoutStatus.PAYMENT_FAILED, "checkout attempt should be marked failed");
         require(attempt.paymentTransaction().status() == PaymentStatus.FAILED, "payment transaction should be marked failed");
         require(attempt.outboxMessages().size() == 1, "failed payment should create one failed outbox message");
@@ -208,6 +209,16 @@ public final class CheckoutUseCaseCheck {
         require(paymentGateway.callCount == 2, "duplicate retry should not charge payment gateway again");
         require(order.checkoutAttempts().size() == 2, "order should keep original failed attempt and retry attempt");
         require(order.status() == OrderStatus.PAID, "successful retry should mark order paid");
+    }
+
+    private static void marksOrderFailedWhenRetryablePaymentExhaustsRetries() {
+        Order order = order();
+        CheckoutUseCase useCase = useCaseWithOrder(order);
+
+        CheckoutResponse response = useCase.checkout(ORDER_ID, new CheckoutRequest("terminal-key", "tok_retry_fail"));
+
+        require(response.status() == CheckoutStatus.PAYMENT_FAILED, "terminal failure should still return failed checkout response");
+        require(order.status() == OrderStatus.FAILED, "terminal retry failure should mark order FAILED");
     }
 
     private static void rejectsRetryWhenCheckoutDidNotFail() {

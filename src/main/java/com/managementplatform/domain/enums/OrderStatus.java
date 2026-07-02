@@ -3,6 +3,7 @@ package com.managementplatform.domain.enums;
 public enum OrderStatus {
     DRAFT("Draft"),
     CHECKOUT_PROCESSING("CheckoutProcessing"),
+    FAILED("Failed"),
     PAID("Paid");
 
     private final String apiName;

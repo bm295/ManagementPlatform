@@ -14,7 +14,7 @@ import java.util.function.IntSupplier;
 public final class MockPaymentGateway implements PaymentGateway {
     private static final int NORMAL_ATTEMPT_COUNT = 1;
     private static final int RETRY_ATTEMPT_COUNT = 2;
-    private static final int UNSTABLE_FAILURE_PERCENT = 25;
+    private static final int UNSTABLE_FAILURE_PERCENT = 50;
     private final IntSupplier failureRollSupplier;
 
     /**
@@ -42,6 +42,9 @@ public final class MockPaymentGateway implements PaymentGateway {
         }
 
         if (token.contains("fail")) {
+            if (token.contains("retry")) {
+                return failed(request, RETRY_ATTEMPT_COUNT, "Payment failed after retry limit in the mock gateway.");
+            }
             return failed(request, "Payment failed in the mock gateway.");
         }
 
@@ -63,9 +66,13 @@ public final class MockPaymentGateway implements PaymentGateway {
     }
 
     private static PaymentGatewayResult failed(PaymentGatewayRequest request, String failureReason) {
+        return failed(request, NORMAL_ATTEMPT_COUNT, failureReason);
+    }
+
+    private static PaymentGatewayResult failed(PaymentGatewayRequest request, int attemptCount, String failureReason) {
         return new PaymentGatewayResult(
             PaymentStatus.FAILED,
-            NORMAL_ATTEMPT_COUNT,
+            attemptCount,
             providerTransactionId(request),
             failureReason
         );
