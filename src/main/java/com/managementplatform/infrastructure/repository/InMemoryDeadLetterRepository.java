@@ -1,6 +1,6 @@
 package com.managementplatform.infrastructure.repository;
 
-import com.managementplatform.application.port.DeadLetterRepository;
+import com.managementplatform.application.port.out.DeadLetterRepository;
 import com.managementplatform.domain.model.DeadLetterMessage;
 import java.util.Comparator;
 import java.util.List;

@@ -1,7 +1,7 @@
 package com.managementplatform.application.usecase;
 
 import com.managementplatform.application.dto.RetryableIntegrationPageResponse;
-import com.managementplatform.application.port.IntegrationRetryRepository;
+import com.managementplatform.application.port.out.IntegrationRetryRepository;
 import com.managementplatform.domain.enums.OutboxMessageType;
 import com.managementplatform.domain.enums.OutboxStatus;
 import com.managementplatform.domain.model.OutboxMessage;

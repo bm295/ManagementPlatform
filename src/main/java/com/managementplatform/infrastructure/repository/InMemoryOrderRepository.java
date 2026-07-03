@@ -1,6 +1,6 @@
 package com.managementplatform.infrastructure.repository;
 
-import com.managementplatform.application.port.OrderRepository;
+import com.managementplatform.application.port.out.OrderRepository;
 import com.managementplatform.domain.model.Order;
 import com.managementplatform.domain.model.Tenant;
 import java.math.BigDecimal;
@@ -50,8 +50,10 @@ public final class InMemoryOrderRepository implements OrderRepository {
         return filteredOrders(name).size();
     }
 
-    public void save(Order order) {
+    @Override
+    public Order save(Order order) {
         ordersById.put(order.id(), order);
+        return order;
     }
 
     private List<Order> filteredOrders(String name) {

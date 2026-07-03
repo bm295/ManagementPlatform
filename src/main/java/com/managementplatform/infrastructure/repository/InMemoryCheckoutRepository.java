@@ -1,6 +1,6 @@
 package com.managementplatform.infrastructure.repository;
 
-import com.managementplatform.application.port.CheckoutRepository;
+import com.managementplatform.application.port.out.CheckoutRepository;
 import com.managementplatform.domain.model.CheckoutAttempt;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

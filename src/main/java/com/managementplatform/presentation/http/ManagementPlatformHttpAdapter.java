@@ -1,10 +1,12 @@
 package com.managementplatform.presentation.http;
 
 import com.managementplatform.application.dto.CheckoutRequest;
-import com.managementplatform.application.port.CheckoutRepository;
-import com.managementplatform.application.port.DeadLetterRepository;
-import com.managementplatform.application.port.OrderRepository;
-import com.managementplatform.application.usecase.CheckoutUseCase;
+import com.managementplatform.application.dto.CreateOrderRequest;
+import com.managementplatform.application.port.in.CheckoutInputPort;
+import com.managementplatform.application.port.in.CreateOrderInputPort;
+import com.managementplatform.application.port.out.CheckoutRepository;
+import com.managementplatform.application.port.out.DeadLetterRepository;
+import com.managementplatform.application.port.out.OrderRepository;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -26,11 +28,13 @@ public final class ManagementPlatformHttpAdapter {
     public ManagementPlatformHttpAdapter(OrderRepository orderRepository,
                                          CheckoutRepository checkoutRepository,
                                          DeadLetterRepository deadLetterRepository,
-                                         CheckoutUseCase checkoutUseCase) {
+                                         CreateOrderInputPort createOrderUseCase,
+                                         CheckoutInputPort checkoutUseCase) {
         this(new ManagementPlatformRouteHandlers(
             orderRepository,
             checkoutRepository,
             deadLetterRepository,
+            createOrderUseCase,
             checkoutUseCase
         ));
     }
@@ -92,6 +96,10 @@ public final class ManagementPlatformHttpAdapter {
 
     public static CheckoutRequest checkoutRequestFromJson(String json) {
         return ManagementPlatformRouteHandlers.checkoutRequestFromJson(json);
+    }
+
+    public static CreateOrderRequest createOrderRequestFromJson(String json) {
+        return ManagementPlatformRouteHandlers.createOrderRequestFromJson(json);
     }
 
     private static void sendMethodNotAllowed(HttpExchange exchange, String allowedMethods) throws IOException {

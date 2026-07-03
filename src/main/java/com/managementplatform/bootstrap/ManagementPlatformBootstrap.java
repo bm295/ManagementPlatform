@@ -1,9 +1,10 @@
 package com.managementplatform.bootstrap;
 
-import com.managementplatform.application.port.CheckoutRepository;
-import com.managementplatform.application.port.DeadLetterRepository;
-import com.managementplatform.application.port.OrderRepository;
-import com.managementplatform.application.port.TimeProvider;
+import com.managementplatform.application.port.out.CheckoutRepository;
+import com.managementplatform.application.port.out.DeadLetterRepository;
+import com.managementplatform.application.port.out.OrderRepository;
+import com.managementplatform.application.port.out.TimeProvider;
+import com.managementplatform.application.usecase.CreateOrderUseCase;
 import com.managementplatform.application.usecase.CheckoutUseCase;
 import com.managementplatform.infrastructure.gateway.MockPaymentGateway;
 import com.managementplatform.infrastructure.repository.InMemoryCheckoutRepository;
@@ -33,6 +34,7 @@ public final class ManagementPlatformBootstrap {
         CheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
         DeadLetterRepository deadLetterRepository = new InMemoryDeadLetterRepository();
         TimeProvider timeProvider = Instant::now;
+        CreateOrderUseCase createOrderUseCase = new CreateOrderUseCase(orderRepository, timeProvider);
         CheckoutUseCase checkoutUseCase = new CheckoutUseCase(
             orderRepository,
             checkoutRepository,
@@ -44,6 +46,7 @@ public final class ManagementPlatformBootstrap {
             orderRepository,
             checkoutRepository,
             deadLetterRepository,
+            createOrderUseCase,
             checkoutUseCase
         );
         return adapter.createServer(port);

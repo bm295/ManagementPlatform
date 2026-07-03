@@ -2,10 +2,10 @@ package com.managementplatform.application.usecase;
 
 import com.managementplatform.application.dto.CheckoutRequest;
 import com.managementplatform.application.dto.CheckoutResponse;
-import com.managementplatform.application.port.PaymentGateway;
-import com.managementplatform.application.port.PaymentGatewayRequest;
-import com.managementplatform.application.port.PaymentGatewayResult;
-import com.managementplatform.application.port.TimeProvider;
+import com.managementplatform.application.port.out.PaymentGateway;
+import com.managementplatform.application.port.out.PaymentGatewayRequest;
+import com.managementplatform.application.port.out.PaymentGatewayResult;
+import com.managementplatform.application.port.out.TimeProvider;
 import com.managementplatform.domain.enums.CheckoutStatus;
 import com.managementplatform.domain.enums.OrderStatus;
 import com.managementplatform.domain.enums.OutboxMessageType;

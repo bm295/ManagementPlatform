@@ -3,13 +3,14 @@ package com.managementplatform.application.usecase;
 import com.managementplatform.application.dto.CheckoutRequest;
 import com.managementplatform.application.dto.CheckoutResponse;
 import com.managementplatform.application.dto.IntegrationStatusDto;
-import com.managementplatform.application.port.CheckoutRepository;
-import com.managementplatform.application.port.DeadLetterRepository;
-import com.managementplatform.application.port.OrderRepository;
-import com.managementplatform.application.port.PaymentGateway;
-import com.managementplatform.application.port.PaymentGatewayRequest;
-import com.managementplatform.application.port.PaymentGatewayResult;
-import com.managementplatform.application.port.TimeProvider;
+import com.managementplatform.application.port.in.CheckoutInputPort;
+import com.managementplatform.application.port.out.CheckoutRepository;
+import com.managementplatform.application.port.out.DeadLetterRepository;
+import com.managementplatform.application.port.out.OrderRepository;
+import com.managementplatform.application.port.out.PaymentGateway;
+import com.managementplatform.application.port.out.PaymentGatewayRequest;
+import com.managementplatform.application.port.out.PaymentGatewayResult;
+import com.managementplatform.application.port.out.TimeProvider;
 import com.managementplatform.domain.enums.CheckoutStatus;
 import com.managementplatform.domain.enums.OrderStatus;
 import com.managementplatform.domain.enums.OutboxMessageType;
@@ -30,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Coordinates the checkout flow at the application layer.
  */
-public final class CheckoutUseCase {
+public final class CheckoutUseCase implements CheckoutInputPort {
     private final OrderRepository orderRepository;
     private final CheckoutRepository checkoutRepository;
     private final DeadLetterRepository deadLetterRepository;

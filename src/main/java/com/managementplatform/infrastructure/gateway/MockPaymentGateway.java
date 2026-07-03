@@ -1,8 +1,8 @@
 package com.managementplatform.infrastructure.gateway;
 
-import com.managementplatform.application.port.PaymentGateway;
-import com.managementplatform.application.port.PaymentGatewayRequest;
-import com.managementplatform.application.port.PaymentGatewayResult;
+import com.managementplatform.application.port.out.PaymentGateway;
+import com.managementplatform.application.port.out.PaymentGatewayRequest;
+import com.managementplatform.application.port.out.PaymentGatewayResult;
 import com.managementplatform.domain.enums.PaymentStatus;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;

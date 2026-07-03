@@ -2,7 +2,8 @@ package com.managementplatform.application.usecase;
 
 import com.managementplatform.application.dto.RetryableIntegrationItemDto;
 import com.managementplatform.application.dto.RetryableIntegrationPageResponse;
-import com.managementplatform.application.port.IntegrationRetryRepository;
+import com.managementplatform.application.port.in.ListRetryableIntegrationsInputPort;
+import com.managementplatform.application.port.out.IntegrationRetryRepository;
 import com.managementplatform.domain.model.OutboxMessage;
 import com.managementplatform.shared.exception.ValidationException;
 import java.util.Objects;
@@ -10,7 +11,7 @@ import java.util.Objects;
 /**
  * Lists retryable integration follow-up actions for the operations recovery queue.
  */
-public final class ListRetryableIntegrationsUseCase {
+public final class ListRetryableIntegrationsUseCase implements ListRetryableIntegrationsInputPort {
     private final IntegrationRetryRepository integrationRetryRepository;
 
     public ListRetryableIntegrationsUseCase(IntegrationRetryRepository integrationRetryRepository) {

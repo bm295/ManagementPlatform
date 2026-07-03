@@ -2,6 +2,7 @@ package com.managementplatform;
 
 import com.managementplatform.bootstrap.ManagementPlatformBootstrap;
 import com.managementplatform.application.dto.CheckoutRequest;
+import com.managementplatform.application.dto.CreateOrderRequest;
 import com.managementplatform.presentation.http.ManagementPlatformHttpAdapter;
 import com.sun.net.httpserver.HttpServer;
 import java.net.URI;
@@ -19,6 +20,7 @@ public final class ManagementPlatformApplicationCheck {
         readsPortFromEnvironment();
         rejectsInvalidPort();
         parsesCheckoutJsonBody();
+        parsesCreateOrderJsonBody();
         servesOrderRoutesAndCheckout();
     }
 
@@ -47,6 +49,19 @@ public final class ManagementPlatformApplicationCheck {
 
         require(request.idempotencyKey().equals("idem-1"), "JSON parser should read idempotencyKey");
         require(request.paymentMethodToken().equals("tok_success"), "JSON parser should read paymentMethodToken");
+    }
+
+    private static void parsesCreateOrderJsonBody() {
+        CreateOrderRequest request = ManagementPlatformHttpAdapter.createOrderRequestFromJson(
+            "{\"tenantId\":42,\"tenantName\":\"Acme\",\"tenantEmail\":\"ops@acme.example\",\"name\":\"New order\",\"amount\":123.45,\"currency\":\"usd\"}"
+        );
+
+        require(request.tenantId() == 42, "create order JSON parser should read tenantId");
+        require(request.tenantName().equals("Acme"), "create order JSON parser should read tenantName");
+        require(request.tenantEmail().equals("ops@acme.example"), "create order JSON parser should read tenantEmail");
+        require(request.name().equals("New order"), "create order JSON parser should read name");
+        require(request.amount().toPlainString().equals("123.45"), "create order JSON parser should read amount");
+        require(request.currency().equals("usd"), "create order JSON parser should read currency");
     }
 
     private static void servesOrderRoutesAndCheckout() throws Exception {
@@ -87,6 +102,17 @@ public final class ManagementPlatformApplicationCheck {
             require(orders.body().contains("\"tenantName\":\"Acme Corp\""), "orders response should include summary tenant name");
             require(!orders.body().contains("\"tenant\":"), "orders response should not include nested tenant details");
             require(orders.body().contains("Acme"), "orders response should apply name query");
+
+            HttpResponse<String> createdOrder = client.send(
+                HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString("{\"tenantId\":9,\"tenantName\":\"Initech\",\"tenantEmail\":\"ops@initech.example\",\"name\":\"Initech onboarding\",\"amount\":42.50,\"currency\":\"usd\"}"))
+                    .build(),
+                HttpResponse.BodyHandlers.ofString()
+            );
+            require(createdOrder.statusCode() == 201, "POST /api/orders should return HTTP 201");
+            require(createdOrder.body().contains("\"tenantId\":9"), "created order response should include tenantId");
+            require(createdOrder.body().contains("\"status\":\"Draft\""), "created order response should default to draft");
 
             HttpResponse<String> order = client.send(
                 HttpRequest.newBuilder(URI.create(baseUrl + "/api/orders/1")).GET().build(),

@@ -2,9 +2,10 @@ package com.managementplatform.application.usecase;
 
 import com.managementplatform.application.dto.RetryIntegrationRequest;
 import com.managementplatform.application.dto.RetryIntegrationResponse;
-import com.managementplatform.application.port.IntegrationRetryExecutor;
-import com.managementplatform.application.port.IntegrationRetryExecutor.IntegrationRetryExecutionResult;
-import com.managementplatform.application.port.IntegrationRetryRepository;
+import com.managementplatform.application.port.in.RetryIntegrationInputPort;
+import com.managementplatform.application.port.out.IntegrationRetryExecutor;
+import com.managementplatform.application.port.out.IntegrationRetryExecutor.IntegrationRetryExecutionResult;
+import com.managementplatform.application.port.out.IntegrationRetryRepository;
 import com.managementplatform.domain.enums.OutboxStatus;
 import com.managementplatform.domain.model.OutboxMessage;
 import com.managementplatform.domain.model.RetryIdempotencyRecord;
@@ -16,7 +17,7 @@ import java.util.Objects;
 /**
  * Retries one eligible integration follow-up action while enforcing retry idempotency.
  */
-public final class RetryIntegrationUseCase {
+public final class RetryIntegrationUseCase implements RetryIntegrationInputPort {
     private final IntegrationRetryRepository integrationRetryRepository;
     private final IntegrationRetryExecutor integrationRetryExecutor;
 
