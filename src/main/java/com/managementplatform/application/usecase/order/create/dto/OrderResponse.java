@@ -1,4 +1,4 @@
-package com.managementplatform.application.dto;
+package com.managementplatform.application.usecase.order.create.dto;
 
 import com.managementplatform.domain.enums.OrderStatus;
 import java.math.BigDecimal;

@@ -1,4 +1,4 @@
-package com.managementplatform.application.dto;
+package com.managementplatform.application.usecase.order.create.dto;
 
 import java.math.BigDecimal;
 

@@ -4,7 +4,7 @@ import com.managementplatform.application.port.out.CheckoutRepository;
 import com.managementplatform.application.port.out.DeadLetterRepository;
 import com.managementplatform.application.port.out.OrderRepository;
 import com.managementplatform.application.port.out.TimeProvider;
-import com.managementplatform.application.usecase.CreateOrderUseCase;
+import com.managementplatform.application.usecase.order.create.CreateOrderUseCase;
 import com.managementplatform.application.usecase.CheckoutUseCase;
 import com.managementplatform.infrastructure.gateway.MockPaymentGateway;
 import com.managementplatform.infrastructure.repository.InMemoryCheckoutRepository;

@@ -1,8 +1,8 @@
-package com.managementplatform.application.usecase;
+package com.managementplatform.application.usecase.order.create;
 
-import com.managementplatform.application.dto.CreateOrderRequest;
-import com.managementplatform.application.dto.OrderResponse;
-import com.managementplatform.application.port.in.CreateOrderInputPort;
+import com.managementplatform.application.usecase.order.create.dto.CreateOrderRequest;
+import com.managementplatform.application.usecase.order.create.dto.OrderResponse;
+import com.managementplatform.application.port.in.order.create.CreateOrderInputPort;
 import com.managementplatform.application.port.out.OrderRepository;
 import com.managementplatform.application.port.out.TimeProvider;
 import com.managementplatform.domain.enums.OrderStatus;

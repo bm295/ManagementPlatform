@@ -1,9 +1,9 @@
 package com.managementplatform.presentation.http;
 
 import com.managementplatform.application.dto.CheckoutRequest;
-import com.managementplatform.application.dto.CreateOrderRequest;
+import com.managementplatform.application.usecase.order.create.dto.CreateOrderRequest;
 import com.managementplatform.application.port.in.CheckoutInputPort;
-import com.managementplatform.application.port.in.CreateOrderInputPort;
+import com.managementplatform.application.port.in.order.create.CreateOrderInputPort;
 import com.managementplatform.application.port.out.CheckoutRepository;
 import com.managementplatform.application.port.out.DeadLetterRepository;
 import com.managementplatform.application.port.out.OrderRepository;
