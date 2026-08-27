@@ -43,6 +43,7 @@ public final class CheckoutUseCaseCheck {
         marksOrderProcessingBeforePaymentChargeStep();
         recordsDeclinedPaymentFailure();
         recordsPaymentFailureAndDeadLetter();
+        escapesQuotesAndBackslashesInPayloads();
         retriesFailedPaymentWithFreshIdempotencyKey();
         marksOrderFailedWhenRetryablePaymentExhaustsRetries();
         rejectsRetryWhenCheckoutDidNotFail();
@@ -187,6 +188,47 @@ public final class CheckoutUseCaseCheck {
             "dead-letter should store the full failed checkout payload for debugging");
         require(response.integrations().size() == 1, "failed response should include failed integration status");
         require(response.integrations().getFirst().status() == OutboxStatus.FAILED, "failed response integration should be failed");
+    }
+
+    private static void escapesQuotesAndBackslashesInPayloads() {
+        Order successOrder = new Order(
+            ORDER_ID,
+            1,
+            new Tenant(1, "Acme \"Ops\" \\ EU", "ops\\alerts@example.com", NOW),
+            "Launch \"bundle\" \\ alpha",
+            new BigDecimal("199.00"),
+            "USD",
+            NOW
+        );
+        InMemoryCheckoutRepository successCheckoutRepository = new InMemoryCheckoutRepository();
+        CheckoutUseCase successUseCase = useCaseWith(successOrder, successCheckoutRepository, new InMemoryDeadLetterRepository(), new MockPaymentGateway());
+
+        CheckoutResponse successResponse = successUseCase.checkout(ORDER_ID, new CheckoutRequest("escape-success", "tok_success"));
+        CheckoutAttempt successAttempt = successCheckoutRepository.findById(successResponse.checkoutId()).orElseThrow();
+
+        require(successAttempt.outboxMessages().getFirst().payloadJson().contains("Launch \\\"bundle\\\" \\\\ alpha"),
+            "success payload should escape order name");
+        require(successAttempt.outboxMessages().getFirst().payloadJson().contains("ops\\\\alerts@example.com"),
+            "success payload should escape tenant email");
+
+        Order failedOrder = new Order(
+            ORDER_ID,
+            1,
+            new Tenant(1, "Acme \"Ops\" \\ EU", "ops\\alerts@example.com", NOW),
+            "Launch \"bundle\" \\ alpha",
+            new BigDecimal("199.00"),
+            "USD",
+            NOW
+        );
+        InMemoryCheckoutRepository failedCheckoutRepository = new InMemoryCheckoutRepository();
+        CheckoutUseCase failedUseCase = useCaseWith(failedOrder, failedCheckoutRepository, new InMemoryDeadLetterRepository(), new MockPaymentGateway());
+        CheckoutResponse failedResponse = failedUseCase.checkout(ORDER_ID, new CheckoutRequest("escape-fail", "tok_fail"));
+        CheckoutAttempt failedAttempt = failedCheckoutRepository.findById(failedResponse.checkoutId()).orElseThrow();
+
+        require(failedAttempt.outboxMessages().getFirst().payloadJson().contains("Acme \\\"Ops\\\" \\\\ EU"),
+            "failure payload should escape tenant name");
+        require(failedAttempt.outboxMessages().getFirst().payloadJson().contains("Launch \\\"bundle\\\" \\\\ alpha"),
+            "failure payload should escape order name");
     }
 
     private static void retriesFailedPaymentWithFreshIdempotencyKey() {

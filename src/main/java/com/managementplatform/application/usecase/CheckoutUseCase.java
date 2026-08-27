@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Coordinates the checkout flow at the application layer.
  */
 public final class CheckoutUseCase implements CheckoutInputPort {
+    private final CheckoutPayloadFactory checkoutPayloadFactory = new CheckoutPayloadFactory();
     private final OrderRepository orderRepository;
     private final CheckoutRepository checkoutRepository;
     private final DeadLetterRepository deadLetterRepository;
@@ -163,7 +164,7 @@ public final class CheckoutUseCase implements CheckoutInputPort {
             attempt.id(),
             OutboxMessageType.SEND_CHECKOUT_EMAIL,
             OutboxStatus.PENDING,
-            checkoutSuccessPayload(order, attempt),
+            checkoutPayloadFactory.successPayload(order, attempt.id()),
             0,
             null,
             now(),
@@ -185,7 +186,7 @@ public final class CheckoutUseCase implements CheckoutInputPort {
             attempt.id(),
             OutboxMessageType.PAYMENT_CHARGE,
             OutboxStatus.FAILED,
-            paymentFailurePayload(order, attempt, paymentResult),
+            checkoutPayloadFactory.failurePayload(order, attempt.id(), attempt.createdAt(), attempt.idempotencyKey(), attempt.completedAt(), attempt.paymentTransaction()),
             paymentResult.attemptCount(),
             failureReason,
             now(),
@@ -206,52 +207,6 @@ public final class CheckoutUseCase implements CheckoutInputPort {
             failureReason,
             now()
         ));
-    }
-
-    private String checkoutSuccessPayload(Order order, CheckoutAttempt attempt) {
-        return "{\"orderId\":%d,\"checkoutAttemptId\":%d,\"orderName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\"}".formatted(
-            order.id(),
-            attempt.id(),
-            escapeJson(order.name()),
-            escapeJson(order.tenant().email()),
-            order.amount(),
-            escapeJson(order.currency())
-        );
-    }
-
-    private String paymentFailurePayload(Order order, CheckoutAttempt attempt, PaymentGatewayResult paymentResult) {
-        return "{\"order\":{\"id\":%d,\"tenantId\":%d,\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"name\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\"},\"checkout\":{\"id\":%d,\"idempotencyKey\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"completedAt\":%s},\"payment\":{\"status\":\"%s\",\"attemptCount\":%d,\"providerTransactionId\":%s,\"failureReason\":%s}}".formatted(
-            order.id(),
-            order.tenantId(),
-            escapeJson(order.tenant().name()),
-            escapeJson(order.tenant().email()),
-            escapeJson(order.name()),
-            order.amount(),
-            escapeJson(order.currency()),
-            order.status().apiName(),
-            order.createdAt(),
-            attempt.id(),
-            escapeJson(attempt.idempotencyKey()),
-            attempt.status().apiName(),
-            attempt.createdAt(),
-            nullableInstantJson(attempt.completedAt()),
-            paymentResult.status().apiName(),
-            paymentResult.attemptCount(),
-            nullableStringJson(paymentResult.providerTransactionId()),
-            nullableStringJson(paymentResult.failureReason())
-        );
-    }
-
-    private static String nullableInstantJson(Instant value) {
-        return value == null ? "null" : "\"" + value + "\"";
-    }
-
-    private static String nullableStringJson(String value) {
-        return value == null ? "null" : "\"" + escapeJson(value) + "\"";
-    }
-
-    private static String escapeJson(String value) {
-        return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
     private long nextCheckoutId() {

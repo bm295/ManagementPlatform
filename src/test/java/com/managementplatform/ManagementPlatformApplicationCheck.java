@@ -2,7 +2,7 @@ package com.managementplatform;
 
 import com.managementplatform.bootstrap.ManagementPlatformBootstrap;
 import com.managementplatform.application.dto.CheckoutRequest;
-import com.managementplatform.application.dto.CreateOrderRequest;
+import com.managementplatform.application.usecase.order.create.dto.CreateOrderRequest;
 import com.managementplatform.presentation.http.ManagementPlatformHttpAdapter;
 import com.sun.net.httpserver.HttpServer;
 import java.net.URI;
