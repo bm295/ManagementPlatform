@@ -8,5 +8,11 @@ public record CreateOrderRequest(
     String tenantEmail,
     String name,
     BigDecimal amount,
-    String currency
-) {}
+    String currency,
+    String productSku,
+    Integer quantity
+) {
+    public CreateOrderRequest(long tenantId, String tenantName, String tenantEmail, String name, BigDecimal amount, String currency) {
+        this(tenantId, tenantName, tenantEmail, name, amount, currency, null, null);
+    }
+}

@@ -3,6 +3,7 @@ package com.managementplatform.presentation.http;
 import com.managementplatform.application.dto.CheckoutRequest;
 import com.managementplatform.application.usecase.order.create.dto.CreateOrderRequest;
 import com.managementplatform.application.port.in.CheckoutInputPort;
+import com.managementplatform.application.port.in.order.confirm.ConfirmOrderInputPort;
 import com.managementplatform.application.port.in.order.create.CreateOrderInputPort;
 import com.managementplatform.application.port.out.CheckoutRepository;
 import com.managementplatform.application.port.out.DeadLetterRepository;
@@ -30,12 +31,22 @@ public final class ManagementPlatformHttpAdapter {
                                          DeadLetterRepository deadLetterRepository,
                                          CreateOrderInputPort createOrderUseCase,
                                          CheckoutInputPort checkoutUseCase) {
+        this(orderRepository, checkoutRepository, deadLetterRepository, createOrderUseCase, checkoutUseCase, null);
+    }
+
+    public ManagementPlatformHttpAdapter(OrderRepository orderRepository,
+                                         CheckoutRepository checkoutRepository,
+                                         DeadLetterRepository deadLetterRepository,
+                                         CreateOrderInputPort createOrderUseCase,
+                                         CheckoutInputPort checkoutUseCase,
+                                         ConfirmOrderInputPort confirmOrderUseCase) {
         this(new ManagementPlatformRouteHandlers(
             orderRepository,
             checkoutRepository,
             deadLetterRepository,
             createOrderUseCase,
-            checkoutUseCase
+            checkoutUseCase,
+            confirmOrderUseCase
         ));
     }
 
@@ -100,6 +111,10 @@ public final class ManagementPlatformHttpAdapter {
 
     public static CreateOrderRequest createOrderRequestFromJson(String json) {
         return ManagementPlatformRouteHandlers.createOrderRequestFromJson(json);
+    }
+
+    public static com.managementplatform.application.dto.ConfirmOrderRequest confirmOrderRequestFromJson(String json) {
+        return ManagementPlatformRouteHandlers.confirmOrderRequestFromJson(json);
     }
 
     private static void sendMethodNotAllowed(HttpExchange exchange, String allowedMethods) throws IOException {

@@ -14,5 +14,12 @@ public record OrderResponse(
     String currency,
     OrderStatus status,
     Instant createdAt,
-    Instant paidAt
-) {}
+    Instant paidAt,
+    String productSku,
+    int quantity
+) {
+    public OrderResponse(long id, long tenantId, String tenantName, String tenantEmail, String name, BigDecimal amount,
+                         String currency, OrderStatus status, Instant createdAt, Instant paidAt) {
+        this(id, tenantId, tenantName, tenantEmail, name, amount, currency, status, createdAt, paidAt, null, 0);
+    }
+}

@@ -75,6 +75,20 @@ curl -X POST "http://localhost:8080/api/orders/1/checkout" \
   -d '{"idempotencyKey":"demo-1","paymentMethodToken":"tok_success"}'
 ```
 
+Create a draft sales order with a product line, then confirm it. Confirmation checks the customer's active status and available credit, reserves stock, records expected receivables, and creates a shipment request:
+
+```bash
+curl -X POST "http://localhost:8080/api/orders" \
+  -H "Content-Type: application/json" \
+  -d '{"tenantId":3,"tenantName":"Công ty An Phát","tenantEmail":"ops@anphat.example","name":"SO-2026-0001","amount":20000000,"currency":"VND","productSku":"ERP-PRO","quantity":2}'
+
+curl -X POST "http://localhost:8080/api/orders/1000/confirm" \
+  -H "Content-Type: application/json" \
+  -d '{"warehouse":"Hồ Chí Minh"}'
+```
+
+The demo seeds 10 units of `ERP-PRO` at the `Hồ Chí Minh` warehouse. New order tenants default to active with a 100,000,000 credit limit; data remains in memory and resets when the app restarts.
+
 Use a token containing `decline` or `fail` to simulate terminal payment failure. Use a token containing `retry` to simulate a successful retry.
 
 Get checkout status:

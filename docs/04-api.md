@@ -15,6 +15,23 @@ Gets one order with tenant and payment state.
 - returns `200 OK` when the order exists
 - returns `404 Not Found` when the order does not exist
 
+## `POST /api/orders/{orderId}/confirm`
+
+Confirms a draft sales order after validating customer status, available credit, and warehouse stock.
+
+```json
+{
+  "warehouse": "Hồ Chí Minh"
+}
+```
+
+The order must have been created with both `productSku` and `quantity`. A successful confirmation reserves inventory, adds the order amount to expected receivables, changes the order status to `Confirmed`, and creates a shipment request.
+
+- returns `200 OK` with the reservation, expected receivable amount, and shipment request ID
+- returns `400 Bad Request` when the order line or request is invalid
+- returns `404 Not Found` when the order does not exist
+- returns `409 Conflict` when the customer is inactive, credit is insufficient, stock is insufficient, or the order is not a draft
+
 ## `POST /api/orders/{orderId}/checkout`
 
 Request:

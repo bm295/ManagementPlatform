@@ -33,6 +33,14 @@ public final class InMemoryOrderRepository implements OrderRepository {
     }
 
     @Override
+    public Optional<Tenant> findTenantById(long tenantId) {
+        return ordersById.values().stream()
+            .filter(order -> order.tenantId() == tenantId)
+            .map(Order::tenant)
+            .findFirst();
+    }
+
+    @Override
     public List<Order> search(String name, int page, int pageSize) {
         int safePage = Math.max(1, page);
         int safePageSize = Math.max(1, pageSize);

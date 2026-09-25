@@ -9,6 +9,7 @@ import com.managementplatform.domain.enums.OrderStatus;
 import com.managementplatform.domain.model.Order;
 import com.managementplatform.domain.model.Tenant;
 import com.managementplatform.shared.exception.ValidationException;
+import com.managementplatform.shared.exception.ConflictException;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -23,13 +24,17 @@ public final class CreateOrderUseCase implements CreateOrderInputPort {
     }
 
     @Override
-    public OrderResponse create(CreateOrderRequest request) {
+    public synchronized OrderResponse create(CreateOrderRequest request) {
         validate(request);
-        Tenant tenant = new Tenant(request.tenantId(), request.tenantName().trim(), request.tenantEmail().trim(), now());
-        Order order = new Order(nextOrderId(), tenant.id(), tenant, request.name().trim(), request.amount(), request.currency().trim().toUpperCase(), now());
+        Tenant tenant = orderRepository.findTenantById(request.tenantId()).orElse(null);
+        if (tenant != null && (!tenant.name().equals(request.tenantName().trim()) || !tenant.email().equals(request.tenantEmail().trim()))) {
+            throw new ConflictException("Customer details do not match tenantId %d.".formatted(request.tenantId()));
+        }
+        if (tenant == null) tenant = new Tenant(request.tenantId(), request.tenantName().trim(), request.tenantEmail().trim(), now());
+        Order order = new Order(nextOrderId(), tenant.id(), tenant, request.name().trim(), request.amount(), request.currency().trim().toUpperCase(), now(), request.productSku() == null ? null : request.productSku().trim().toUpperCase(), request.quantity() == null ? 0 : request.quantity());
         tenant.addOrder(order);
         Order saved = orderRepository.save(order);
-        return new OrderResponse(saved.id(), saved.tenantId(), tenant.name(), tenant.email(), saved.name(), saved.amount(), saved.currency(), OrderStatus.DRAFT, saved.createdAt(), saved.paidAt());
+        return new OrderResponse(saved.id(), saved.tenantId(), tenant.name(), tenant.email(), saved.name(), saved.amount(), saved.currency(), OrderStatus.DRAFT, saved.createdAt(), saved.paidAt(), saved.productSku(), saved.quantity());
     }
 
     private static void validate(CreateOrderRequest request) {
@@ -41,6 +46,8 @@ public final class CreateOrderUseCase implements CreateOrderInputPort {
         if (request.amount() == null) throw new ValidationException("amount is required.");
         if (request.amount().signum() < 0) throw new ValidationException("amount must be zero or greater.");
         if (isBlank(request.currency())) throw new ValidationException("currency is required.");
+        if ((request.productSku() == null) != (request.quantity() == null)) throw new ValidationException("productSku and quantity must be provided together.");
+        if (request.productSku() != null && (isBlank(request.productSku()) || request.quantity() < 1)) throw new ValidationException("Order line requires a productSku and a quantity greater than zero.");
     }
 
     private static boolean isBlank(String value) { return value == null || value.trim().isEmpty(); }

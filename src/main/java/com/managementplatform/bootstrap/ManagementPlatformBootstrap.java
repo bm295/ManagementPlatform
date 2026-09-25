@@ -5,11 +5,13 @@ import com.managementplatform.application.port.out.DeadLetterRepository;
 import com.managementplatform.application.port.out.OrderRepository;
 import com.managementplatform.application.port.out.TimeProvider;
 import com.managementplatform.application.usecase.order.create.CreateOrderUseCase;
+import com.managementplatform.application.usecase.order.confirm.ConfirmOrderUseCase;
 import com.managementplatform.application.usecase.CheckoutUseCase;
 import com.managementplatform.infrastructure.gateway.MockPaymentGateway;
 import com.managementplatform.infrastructure.repository.InMemoryCheckoutRepository;
 import com.managementplatform.infrastructure.repository.InMemoryDeadLetterRepository;
 import com.managementplatform.infrastructure.repository.InMemoryOrderRepository;
+import com.managementplatform.infrastructure.repository.InMemoryOrderFulfillmentRepository;
 import com.managementplatform.presentation.http.ManagementPlatformHttpAdapter;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
@@ -34,6 +36,7 @@ public final class ManagementPlatformBootstrap {
         CheckoutRepository checkoutRepository = new InMemoryCheckoutRepository();
         DeadLetterRepository deadLetterRepository = new InMemoryDeadLetterRepository();
         TimeProvider timeProvider = Instant::now;
+        InMemoryOrderFulfillmentRepository fulfillmentRepository = new InMemoryOrderFulfillmentRepository();
         CreateOrderUseCase createOrderUseCase = new CreateOrderUseCase(orderRepository, timeProvider);
         CheckoutUseCase checkoutUseCase = new CheckoutUseCase(
             orderRepository,
@@ -42,12 +45,14 @@ public final class ManagementPlatformBootstrap {
             new MockPaymentGateway(),
             timeProvider
         );
+        ConfirmOrderUseCase confirmOrderUseCase = new ConfirmOrderUseCase(orderRepository, fulfillmentRepository, timeProvider);
         ManagementPlatformHttpAdapter adapter = new ManagementPlatformHttpAdapter(
             orderRepository,
             checkoutRepository,
             deadLetterRepository,
             createOrderUseCase,
-            checkoutUseCase
+            checkoutUseCase,
+            confirmOrderUseCase
         );
         return adapter.createServer(port);
     }

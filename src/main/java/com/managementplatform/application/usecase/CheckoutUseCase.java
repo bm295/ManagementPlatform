@@ -112,7 +112,7 @@ public final class CheckoutUseCase implements CheckoutInputPort {
         Order order = orderRepository.findById(orderId)
             .orElseThrow(() -> new ResourceNotFoundException("Order %d was not found.".formatted(orderId)));
 
-        if (order.status() != OrderStatus.DRAFT && !(allowFailedOrder && order.status() == OrderStatus.FAILED)) {
+        if (order.status() != OrderStatus.DRAFT && order.status() != OrderStatus.CONFIRMED && !(allowFailedOrder && order.status() == OrderStatus.FAILED)) {
             throw new ConflictException("Order %d is not available for checkout.".formatted(orderId));
         }
 

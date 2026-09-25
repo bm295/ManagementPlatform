@@ -2,11 +2,14 @@ package com.managementplatform.presentation.http;
 
 import com.managementplatform.application.dto.CheckoutRequest;
 import com.managementplatform.application.dto.CheckoutResponse;
+import com.managementplatform.application.dto.ConfirmOrderRequest;
+import com.managementplatform.application.dto.ConfirmOrderResponse;
 import com.managementplatform.application.usecase.order.create.dto.CreateOrderRequest;
 import com.managementplatform.application.dto.IntegrationStatusDto;
 import com.managementplatform.application.usecase.order.create.dto.OrderResponse;
 import com.managementplatform.application.port.in.order.create.CreateOrderInputPort;
 import com.managementplatform.application.port.in.CheckoutInputPort;
+import com.managementplatform.application.port.in.order.confirm.ConfirmOrderInputPort;
 import com.managementplatform.application.port.out.CheckoutRepository;
 import com.managementplatform.application.port.out.DeadLetterRepository;
 import com.managementplatform.application.port.out.OrderRepository;
@@ -37,17 +40,28 @@ public final class ManagementPlatformRouteHandlers {
     private final DeadLetterRepository deadLetterRepository;
     private final CreateOrderInputPort createOrderUseCase;
     private final CheckoutInputPort checkoutUseCase;
+    private final ConfirmOrderInputPort confirmOrderUseCase;
 
     public ManagementPlatformRouteHandlers(OrderRepository orderRepository,
                                            CheckoutRepository checkoutRepository,
                                            DeadLetterRepository deadLetterRepository,
                                            CreateOrderInputPort createOrderUseCase,
                                            CheckoutInputPort checkoutUseCase) {
+        this(orderRepository, checkoutRepository, deadLetterRepository, createOrderUseCase, checkoutUseCase, null);
+    }
+
+    public ManagementPlatformRouteHandlers(OrderRepository orderRepository,
+                                           CheckoutRepository checkoutRepository,
+                                           DeadLetterRepository deadLetterRepository,
+                                           CreateOrderInputPort createOrderUseCase,
+                                           CheckoutInputPort checkoutUseCase,
+                                           ConfirmOrderInputPort confirmOrderUseCase) {
         this.orderRepository = orderRepository;
         this.checkoutRepository = checkoutRepository;
         this.deadLetterRepository = deadLetterRepository;
         this.createOrderUseCase = createOrderUseCase;
         this.checkoutUseCase = checkoutUseCase;
+        this.confirmOrderUseCase = confirmOrderUseCase;
     }
 
     public void handleOrders(HttpExchange exchange) throws IOException {
@@ -63,6 +77,7 @@ public final class ManagementPlatformRouteHandlers {
             if (segments.size() == 2 && "POST".equals(method)) { handleCreateOrder(exchange); return; }
             if (segments.size() == 3 && "GET".equals(method)) { handleGetOrder(exchange, parseId(segments.get(2), "orderId")); return; }
             if (segments.size() == 4 && "POST".equals(method) && "checkout".equals(segments.get(3))) { handleCheckout(exchange, parseId(segments.get(2), "orderId")); return; }
+            if (segments.size() == 4 && "POST".equals(method) && "confirm".equals(segments.get(3))) { handleConfirmOrder(exchange, parseId(segments.get(2), "orderId")); return; }
             if (segments.size() == 2 || segments.size() == 3 || segments.size() == 4) { sendMethodNotAllowed(exchange, allowedMethodsFor(segments)); return; }
             sendProblem(exchange, 404, "Not Found", "Route was not found.");
         } catch (ValidationException exception) { sendProblem(exchange, 400, "Bad Request", exception.getMessage()); } catch (ResourceNotFoundException exception) { sendProblem(exchange, 404, "Not Found", exception.getMessage()); } catch (ConflictException exception) { sendProblem(exchange, 409, "Conflict", exception.getMessage()); } catch (RuntimeException exception) { sendProblem(exchange, 500, "Internal Server Error", "An unexpected error occurred."); }
@@ -87,6 +102,11 @@ public final class ManagementPlatformRouteHandlers {
     }
 
     private void handleCreateOrder(HttpExchange exchange) throws IOException { CreateOrderRequest request = createOrderRequestFromJson(readRequestBody(exchange)); OrderResponse response = createOrderUseCase.create(request); sendJson(exchange, 201, orderResponseJson(response)); }
+    private void handleConfirmOrder(HttpExchange exchange, long orderId) throws IOException {
+        if (confirmOrderUseCase == null) { sendProblem(exchange, 501, "Not Implemented", "Order confirmation is not configured."); return; }
+        ConfirmOrderResponse response = confirmOrderUseCase.confirm(orderId, confirmOrderRequestFromJson(readRequestBody(exchange)));
+        sendJson(exchange, 200, confirmOrderResponseJson(response));
+    }
     private void handleGetOrder(HttpExchange exchange, long orderId) throws IOException { Order order = orderRepository.findById(orderId).orElseThrow(() -> new ResourceNotFoundException("Order %d was not found.".formatted(orderId))); sendJson(exchange, 200, orderDetailsJson(order)); }
     private void handleCheckout(HttpExchange exchange, long orderId) throws IOException { CheckoutRequest request = checkoutRequestFromJson(readRequestBody(exchange)); CheckoutResponse response = checkoutUseCase.checkout(orderId, request); sendJson(exchange, 200, checkoutResponseJson(response)); }
     private void handleRetryPayment(HttpExchange exchange, long checkoutId) throws IOException { CheckoutRequest request = checkoutRequestFromJson(readRequestBody(exchange)); CheckoutResponse response = checkoutUseCase.retryPayment(checkoutId, request); sendJson(exchange, 200, checkoutResponseJson(response)); }
@@ -100,8 +120,21 @@ public final class ManagementPlatformRouteHandlers {
             requiredJsonString(json, "tenantEmail"),
             requiredJsonString(json, "name"),
             requiredJsonBigDecimal(json, "amount"),
-            requiredJsonString(json, "currency")
+            requiredJsonString(json, "currency"),
+            optionalJsonString(json, "productSku"),
+            optionalJsonInteger(json, "quantity")
         );
+    }
+    public static ConfirmOrderRequest confirmOrderRequestFromJson(String json) {
+        if (json == null || json.trim().isEmpty()) throw new ValidationException("Confirm order request body is required.");
+        return new ConfirmOrderRequest(requiredJsonString(json, "warehouse"));
+    }
+    private static String optionalJsonString(String json, String fieldName) { return jsonStringValue(json, fieldName); }
+    private static Integer optionalJsonInteger(String json, String fieldName) {
+        String value = jsonNumberValue(json, fieldName);
+        if (value == null) return null;
+        try { return Integer.valueOf(value.trim()); }
+        catch (NumberFormatException exception) { throw new ValidationException("%s must be a valid integer.".formatted(fieldName)); }
     }
     private static String requiredJsonString(String json, String fieldName) { String value = jsonStringValue(json, fieldName); if (value == null) { throw new ValidationException("%s is required.".formatted(fieldName)); } return value; }
     private static long requiredJsonLong(String json, String fieldName) { String value = jsonNumberValue(json, fieldName); if (value == null) { throw new ValidationException("%s is required.".formatted(fieldName)); } try { long parsed = Long.parseLong(value.trim()); if (parsed < 1) { throw new ValidationException("%s must be greater than zero.".formatted(fieldName)); } return parsed; } catch (NumberFormatException exception) { throw new ValidationException("%s must be a valid integer.".formatted(fieldName)); } }
@@ -116,16 +149,17 @@ public final class ManagementPlatformRouteHandlers {
     private static int parsePositiveInt(String value, int defaultValue, String fieldName) { if (value == null || value.isBlank()) { return defaultValue; } try { int parsed = Integer.parseInt(value.trim()); if (parsed < 1) { throw new ValidationException("%s must be greater than zero.".formatted(fieldName)); } return parsed; } catch (NumberFormatException exception) { throw new ValidationException("%s must be a valid integer.".formatted(fieldName)); } }
     private static long parseId(String value, String fieldName) { try { long id = Long.parseLong(value); if (id < 1) { throw new ValidationException("%s must be greater than zero.".formatted(fieldName)); } return id; } catch (NumberFormatException exception) { throw new ValidationException("%s must be a valid integer.".formatted(fieldName)); } }
     private static List<String> pathSegments(String path) { return List.of(path.split("/")).stream().filter(segment -> !segment.isBlank()).toList(); }
-    private static String allowedMethodsFor(List<String> segments) { if (segments.size() == 2) { return "GET, POST"; } if (segments.size() == 3) { return "GET"; } if (segments.size() == 4 && "checkout".equals(segments.get(3))) { return "POST"; } return "GET, POST"; }
+    private static String allowedMethodsFor(List<String> segments) { if (segments.size() == 2) { return "GET, POST"; } if (segments.size() == 3) { return "GET"; } if (segments.size() == 4 && ("checkout".equals(segments.get(3)) || "confirm".equals(segments.get(3)))) { return "POST"; } return "GET, POST"; }
     private static String allowedCheckoutMethodsFor(List<String> segments) { if (segments.size() == 3) { return "GET"; } if (segments.size() == 4 && "retry".equals(segments.get(3))) { return "POST"; } return "GET, POST"; }
-    private static String orderSummaryJson(Order order) { return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\"}".formatted(order.id(), escapeJson(order.name()), escapeJson(order.tenant().name()), decimalJson(order.amount()), escapeJson(order.currency()), order.status().apiName(), order.createdAt()); }
-    private static String orderDetailsJson(Order order) { return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s}".formatted(order.id(), escapeJson(order.name()), escapeJson(order.tenant().name()), escapeJson(order.tenant().email()), decimalJson(order.amount()), escapeJson(order.currency()), order.status().apiName(), order.createdAt(), order.paidAt() == null ? "null" : "\"" + order.paidAt() + "\""); }
-    private static String orderResponseJson(OrderResponse response) { return "{\"id\":%d,\"tenantId\":%d,\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"name\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s}".formatted(response.id(), response.tenantId(), escapeJson(response.tenantName()), escapeJson(response.tenantEmail()), escapeJson(response.name()), decimalJson(response.amount()), escapeJson(response.currency()), response.status().apiName(), response.createdAt(), response.paidAt() == null ? "null" : "\"" + response.paidAt() + "\""); }
+    private static String orderSummaryJson(Order order) { return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"productSku\":%s,\"quantity\":%d}".formatted(order.id(), escapeJson(order.name()), escapeJson(order.tenant().name()), decimalJson(order.amount()), escapeJson(order.currency()), order.status().apiName(), order.createdAt(), nullableStringJson(order.productSku()), order.quantity()); }
+    private static String orderDetailsJson(Order order) { return "{\"id\":%d,\"name\":\"%s\",\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s,\"productSku\":%s,\"quantity\":%d,\"confirmedAt\":%s}".formatted(order.id(), escapeJson(order.name()), escapeJson(order.tenant().name()), escapeJson(order.tenant().email()), decimalJson(order.amount()), escapeJson(order.currency()), order.status().apiName(), order.createdAt(), order.paidAt() == null ? "null" : "\"" + order.paidAt() + "\"", nullableStringJson(order.productSku()), order.quantity(), order.confirmedAt() == null ? "null" : "\"" + order.confirmedAt() + "\""); }
+    private static String orderResponseJson(OrderResponse response) { return "{\"id\":%d,\"tenantId\":%d,\"tenantName\":\"%s\",\"tenantEmail\":\"%s\",\"name\":\"%s\",\"amount\":%s,\"currency\":\"%s\",\"status\":\"%s\",\"createdAt\":\"%s\",\"paidAt\":%s,\"productSku\":%s,\"quantity\":%d}".formatted(response.id(), response.tenantId(), escapeJson(response.tenantName()), escapeJson(response.tenantEmail()), escapeJson(response.name()), decimalJson(response.amount()), escapeJson(response.currency()), response.status().apiName(), response.createdAt(), response.paidAt() == null ? "null" : "\"" + response.paidAt() + "\"", nullableStringJson(response.productSku()), response.quantity()); }
     private static String checkoutAttemptJson(CheckoutAttempt attempt) { return "{\"checkoutId\":%d,\"orderId\":%d,\"status\":\"%s\",\"paymentStatus\":%s,\"failureReason\":%s,\"integrations\":[%s]}".formatted(attempt.id(), attempt.orderId(), attempt.status().apiName(), attempt.paymentTransaction() == null ? "null" : "\"" + attempt.paymentTransaction().status().apiName() + "\"", nullableStringJson(attempt.failureReason() != null ? attempt.failureReason() : paymentFailureReason(attempt)), integrationsJson(attempt.outboxMessages().stream().map(message -> new IntegrationStatusDto(message.type(), message.status(), message.attemptCount(), message.lastError())).toList())); }
     private static String integrationsJson(List<IntegrationStatusDto> integrations) { StringBuilder json = new StringBuilder(); for (int index = 0; index < integrations.size(); index++) { if (index > 0) { json.append(','); } json.append(integrationJson(integrations.get(index))); } return json.toString(); }
     private static String paymentFailureReason(CheckoutAttempt attempt) { return attempt.paymentTransaction() == null ? null : attempt.paymentTransaction().failureReason(); }
     private static String deadLetterJson(DeadLetterMessage message) { return "{\"id\":%d,\"checkoutAttemptId\":%d,\"outboxMessageId\":%d,\"type\":\"%s\",\"attemptCount\":%d,\"failureReason\":%s,\"failedAt\":\"%s\"}".formatted(message.id(), message.checkoutAttemptId(), message.outboxMessageId(), message.type().apiName(), message.attemptCount(), nullableStringJson(message.failureReason()), message.failedAt()); }
     private static String checkoutResponseJson(CheckoutResponse response) { StringBuilder json = new StringBuilder(); json.append("{\"checkoutId\":").append(response.checkoutId()).append(",\"orderId\":").append(response.orderId()).append(",\"status\":\"").append(response.status().apiName()).append('"').append(",\"paymentStatus\":").append(response.paymentStatus() == null ? "null" : "\"" + response.paymentStatus().apiName() + "\"").append(",\"failureReason\":").append(nullableStringJson(response.failureReason())).append(",\"integrations\":["); for (int index = 0; index < response.integrations().size(); index++) { if (index > 0) { json.append(','); } json.append(integrationJson(response.integrations().get(index))); } json.append("]}"); return json.toString(); }
+    private static String confirmOrderResponseJson(ConfirmOrderResponse response) { return "{\"orderId\":%d,\"status\":\"%s\",\"productSku\":\"%s\",\"reservedQuantity\":%d,\"warehouse\":\"%s\",\"expectedReceivable\":%s,\"shipmentRequestId\":%d,\"confirmedAt\":\"%s\"}".formatted(response.orderId(), response.status().apiName(), escapeJson(response.productSku()), response.reservedQuantity(), escapeJson(response.warehouse()), decimalJson(response.expectedReceivable()), response.shipmentRequestId(), response.confirmedAt()); }
     private static String integrationJson(IntegrationStatusDto integration) { return "{\"type\":\"%s\",\"status\":\"%s\",\"attemptCount\":%d,\"lastError\":%s}".formatted(integration.type().apiName(), integration.status().apiName(), integration.attemptCount(), nullableStringJson(integration.lastError())); }
     private static String decimalJson(BigDecimal value) { return value.toPlainString(); }
     private static String nullableStringJson(String value) { return value == null ? "null" : "\"" + escapeJson(value) + "\""; }
