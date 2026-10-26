@@ -68,6 +68,7 @@ public final class CheckoutUseCase implements CheckoutInputPort {
      * @throws ConflictException when the order is not in DRAFT state; HTTP adapters should return 409
      */
     public CheckoutResponse checkout(long orderId, CheckoutRequest request) {
+        validateIdentifier(orderId, "orderId");
         validate(request);
 
         String idempotencyKey = request.idempotencyKey().trim();
@@ -85,6 +86,7 @@ public final class CheckoutUseCase implements CheckoutInputPort {
      * @throws ConflictException when the order is no longer available for payment
      */
     public CheckoutResponse retryPayment(long checkoutId, CheckoutRequest request) {
+        validateIdentifier(checkoutId, "checkoutId");
         validate(request);
 
         CheckoutAttempt failedAttempt = checkoutRepository.findById(checkoutId)
@@ -215,6 +217,12 @@ public final class CheckoutUseCase implements CheckoutInputPort {
 
     private Instant now() {
         return timeProvider.now();
+    }
+
+    private static void validateIdentifier(long id, String fieldName) {
+        if (id < 1) {
+            throw new ValidationException(fieldName + " must be greater than zero.");
+        }
     }
 
     private static void validate(CheckoutRequest request) {
