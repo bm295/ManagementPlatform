@@ -9,31 +9,48 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
  * Thread-safe in-memory order repository backed by a {@link ConcurrentHashMap}.
+ *
+ * <p>All regular reads share one default visibility policy. Administrative reads
+ * that intentionally bypass it are explicit and separate from the application port.</p>
  */
 public final class InMemoryOrderRepository implements OrderRepository {
     private final ConcurrentMap<Long, Order> ordersById = new ConcurrentHashMap<>();
+    private final OrderQueryFilter queryFilter;
 
     public InMemoryOrderRepository() {
+        this.queryFilter = OrderQueryFilter.activeTenantsOnly();
         seedDemoOrders();
     }
 
     public InMemoryOrderRepository(Collection<Order> seedOrders) {
-        seedOrders.forEach(this::save);
+        this(seedOrders, OrderQueryFilter.activeTenantsOnly());
+    }
+
+    public InMemoryOrderRepository(Collection<Order> seedOrders, OrderQueryFilter queryFilter) {
+        this.queryFilter = Objects.requireNonNull(queryFilter, "queryFilter is required.");
+        Objects.requireNonNull(seedOrders, "seedOrders is required.").forEach(this::save);
     }
 
     @Override
     public Optional<Order> findById(long orderId) {
+        return Optional.ofNullable(ordersById.get(orderId)).filter(queryFilter::allows);
+    }
+
+    /** Explicit trusted recovery/admin read; never expose this directly through public HTTP routes. */
+    public Optional<Order> findByIdIgnoringFilters(long orderId) {
         return Optional.ofNullable(ordersById.get(orderId));
     }
 
     @Override
     public Optional<Tenant> findTenantById(long tenantId) {
+        // Tenant identity lookup must not silently create a duplicate inactive tenant.
         return ordersById.values().stream()
             .filter(order -> order.tenantId() == tenantId)
             .map(Order::tenant)
@@ -60,14 +77,16 @@ public final class InMemoryOrderRepository implements OrderRepository {
 
     @Override
     public Order save(Order order) {
-        ordersById.put(order.id(), order);
-        return order;
+        Order required = Objects.requireNonNull(order, "order is required.");
+        ordersById.put(required.id(), required);
+        return required;
     }
 
     private List<Order> filteredOrders(String name) {
         String normalizedName = normalize(name);
         return ordersById.values()
             .stream()
+            .filter(queryFilter::allows)
             .filter(order -> normalizedName.isEmpty() || normalize(order.name()).contains(normalizedName))
             .sorted(Comparator.comparingLong(Order::id))
             .toList();
